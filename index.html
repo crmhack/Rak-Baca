@@ -55,7 +55,7 @@
   .logo-kanji{ font-family:'Anton', sans-serif; font-size:34px; letter-spacing:1px; color:var(--ink); line-height:1; }
   .logo-sub{ font-size:12px; color:var(--muted); letter-spacing:0.5px; font-weight:500; }
   .user-line{ font-size:11px; color:var(--muted); margin-top:2px; }
-  .stats-line{ margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink); opacity:0.75; letter-spacing:0.2px; }
+  .stats-line{ margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink); opacity:0.75; letter-spacing:0.2px; line-height:1.7; }
   .stats-line b{ color:var(--hanko); font-weight:600; }
 
   .controls{ padding:4px 18px 14px; }
@@ -144,6 +144,14 @@
 
   .top-actions-row{ position:absolute; top:22px; right:18px; display:flex; gap:12px; }
   .top-icon-btn{ font-size:19px; color:var(--muted); cursor:pointer; padding:4px 6px; }
+  .menu-wrap{ position:relative; }
+  .menu-dropdown{ position:absolute; top:32px; right:0; background:var(--white); border:2px solid var(--ink); box-shadow:var(--shadow); min-width:210px; z-index:60; display:none; }
+  .menu-dropdown.open{ display:block; }
+  .menu-item{ padding:11px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--paper-2); }
+  .menu-item:last-child{ border-bottom:none; }
+  .menu-item.danger{ color:var(--hanko); font-weight:600; }
+  .menu-item:active{ background:var(--paper-2); }
+
   .toast{ position:fixed; bottom:96px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--white); padding:9px 16px; font-size:12.5px; z-index:40; max-width:80%; text-align:center; opacity:0; transition:opacity 0.3s ease; pointer-events:none; }
   .toast.show{ opacity:1; }
   .storage-warning{ margin:0 18px 8px; background:#F4E3D3; border:1.5px solid var(--gold); padding:8px 10px; font-size:11.5px; color:var(--hanko-deep); display:none; }
@@ -157,14 +165,18 @@
   .sw{ display:inline-block; width:10px; height:10px; margin-right:4px; vertical-align:middle; border-radius:2px; }
   .sw-none{ border:1.5px dashed var(--screentone); background:transparent; }
   .sw-read{ background:var(--ink); }
-  .vol-summary-line{ font-family:'JetBrains Mono', monospace; font-size:12.5px; margin-bottom:12px; }
-  .vol-grid{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
-  .vol-tile{ width:46px; height:46px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono', monospace; font-weight:600; font-size:13px; cursor:pointer; user-select:none; border:1.5px dashed var(--screentone); color:var(--muted); background:transparent; }
+  .vol-summary-line{ font-family:'JetBrains Mono', monospace; font-size:12.5px; margin-bottom:12px; line-height:1.6; }
+  .vol-grid{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .vol-tile{ position:relative; width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono', monospace; font-weight:600; font-size:13px; cursor:pointer; user-select:none; border:1.5px dashed var(--screentone); color:var(--muted); background:transparent; overflow:hidden; background-size:cover; background-position:center; }
   .vol-tile.unread, .vol-tile.read{ border-style:solid; color:var(--white); }
-  .vol-tile-add{ width:46px; height:46px; display:flex; align-items:center; justify-content:center; border:1.5px dashed var(--ink); color:var(--ink); font-size:20px; cursor:pointer; }
+  .vol-tile .vol-num-badge{ position:absolute; bottom:2px; right:3px; font-size:9.5px; background:rgba(0,0,0,0.6); color:#fff; padding:0 3px; border-radius:2px; line-height:1.4; }
+  .vol-tile-add{ width:48px; height:48px; display:flex; align-items:center; justify-content:center; border:1.5px dashed var(--ink); color:var(--ink); font-size:20px; cursor:pointer; }
   .vol-tile-add:active{ opacity:0.6; }
-  .vol-resize-row{ display:flex; gap:8px; align-items:center; margin-top:4px; }
+  .vol-resize-row{ display:flex; gap:8px; align-items:center; margin-top:4px; margin-bottom:18px; }
   .vol-resize-row input{ flex:1; border:2px solid var(--ink); background:var(--white); padding:8px 10px; font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; }
+
+  .vol-detail-toggle{ font-size:12.5px; font-weight:600; color:var(--ink); text-decoration:underline; cursor:pointer; margin-bottom:14px; display:inline-block; }
+  .vol-detail-panel{ background:var(--white); border:2px solid var(--ink); padding:14px; margin-bottom:18px; }
 
   /* Auth screen */
   .auth-screen{ position:fixed; inset:0; background:var(--paper); z-index:50; display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -208,8 +220,16 @@
   <header>
     <div class="top-actions-row">
       <div class="top-icon-btn" id="logoutBtn" title="Keluar">⎋</div>
-      <div class="top-icon-btn" id="menuBtn" title="Opsi">⋮</div>
+      <div class="menu-wrap">
+        <div class="top-icon-btn" id="menuBtn" title="Opsi">⋮</div>
+        <div class="menu-dropdown" id="menuDropdown">
+          <div class="menu-item" id="exportBtn">⬇ Export Data (.json)</div>
+          <div class="menu-item" id="importBtn">⬆ Import Data (.json)</div>
+          <div class="menu-item danger" id="clearAllBtn">🗑 Hapus Semua Data</div>
+        </div>
+      </div>
     </div>
+    <input type="file" id="importFileInput" accept="application/json" style="display:none;">
     <div class="logo-row"><span class="logo-kanji">本棚</span></div>
     <div class="logo-sub">Koleksi Manga & Light Novel-ku</div>
     <div class="user-line" id="userLine"></div>
@@ -324,7 +344,27 @@
     <input type="number" id="vwResizeInput" min="0" placeholder="Atur total volume tercatat">
     <div class="btn btn-ghost small" id="vwResizeBtn">Atur</div>
   </div>
-  <div class="btn btn-ghost" id="vwBackBtn" style="margin-top:16px;">Tutup</div>
+
+  <div class="vol-detail-toggle" id="volDetailToggle">📝 Atur Harga & Gambar per Volume</div>
+  <div class="vol-detail-panel" id="volDetailPanel" style="display:none;">
+    <div class="field">
+      <label>Pilih Volume</label>
+      <select id="volDetailSelect"></select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Harga Beli (Rp)</label>
+        <input type="number" id="volDetailPrice" min="0" placeholder="cth. 45000">
+      </div>
+      <div class="field">
+        <label>Link Gambar (opsional)</label>
+        <input type="text" id="volDetailImage" placeholder="https://...">
+      </div>
+    </div>
+    <div class="btn btn-primary" id="volDetailSaveBtn" style="width:100%;">Simpan Detail Volume</div>
+  </div>
+
+  <div class="btn btn-ghost" id="vwBackBtn">Tutup</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -356,7 +396,7 @@
   let currentUser = null;
   let authMode = 'login';
 
-  // --- KODE UI & LOGIKA MANGA (tidak diubah) ---
+  // --- KODE UI & LOGIKA MANGA ---
   const STATUS_LABEL = { reading:'DIBACA', completed:'SELESAI', plan:'RENCANA', on_hold:'DITUNDA', dropped:'BERHENTI' };
   let collection = [];
   let filterType = 'all', filterStatus = 'all', searchQuery = '';
@@ -369,7 +409,17 @@
 
   function escapeHtml(str){ return str ? str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : ''; }
   function showToast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); setTimeout(()=> toastEl.classList.remove('show'), 1800); }
-  function computeVolStats(entry){ const v = entry.volumes || []; return { total: v.length, owned: v.filter(x=> x.state.includes('owned')).length, read: v.filter(x=> x.state === 'owned_read').length }; }
+  function formatRp(n){ return 'Rp' + (n||0).toLocaleString('id-ID'); }
+  function computeVolStats(entry){
+    const v = entry.volumes || [];
+    const totalPrice = v.reduce((s,x)=> s + (x.price||0), 0);
+    return {
+      total: v.length,
+      owned: v.filter(x=> x.state.includes('owned')).length,
+      read: v.filter(x=> x.state === 'owned_read').length,
+      totalPrice
+    };
+  }
 
   // 4. LOAD & SAVE PAKAI CLOUD FIRESTORE (tetap koleksi "users" / field "koleksi")
   async function loadData(){
@@ -473,10 +523,7 @@
     }
   });
 
-  /* =========================================================
-     DI BAWAH INI ADALAH FUNGSI RENDER DLL ASLI PUNYAMU
-     TIDAK ADA YANG DIUBAH SAMA SEKALI
-     ========================================================= */
+  /* ========================================================= */
 
   function starsHtml(rating){ let out = ''; for(let i=1;i<=5;i++){ out += i<=rating ? '★' : '<span class="off">★</span>'; } return out; }
   function computeStats(){
@@ -484,8 +531,9 @@
     const totalTitles = collection.length;
     const totalVolumesOwned = collection.reduce((sum,e)=> sum + computeVolStats(e).owned, 0);
     const reading = collection.filter(e=>e.status==='reading').length;
+    const totalSpent = collection.reduce((sum,e)=> sum + computeVolStats(e).totalPrice, 0);
     if(totalTitles === 0){ statsLine.innerHTML = 'Belum ada seri di rak.'; return; }
-    statsLine.innerHTML = `<b>${totalTitles}</b> seri &nbsp;•&nbsp; <b>${totalVolumesOwned}</b> volume dimiliki &nbsp;•&nbsp; <b>${reading}</b> sedang dibaca`;
+    statsLine.innerHTML = `<b>${totalTitles}</b> seri &nbsp;•&nbsp; <b>${totalVolumesOwned}</b> volume dimiliki &nbsp;•&nbsp; <b>${reading}</b> sedang dibaca<br>Total belanja: <b>${formatRp(totalSpent)}</b>`;
   }
   function getFiltered(){ return collection.filter(e=>{ if(filterType !== 'all' && e.type !== filterType) return false; if(filterStatus !== 'all' && e.status !== filterStatus) return false; if(searchQuery){ const q = searchQuery.toLowerCase(); const hit = (e.title||'').toLowerCase().includes(q) || (e.author||'').toLowerCase().includes(q); if(!hit) return false; } return true; }).sort((a,b)=> (b.dateAdded||0) - (a.dateAdded||0)); }
 
@@ -496,7 +544,7 @@
     if(items.length === 0){ listEl.innerHTML = `<div class="empty"><div class="empty-kanji">${collection.length===0 ? '空' : '?'}</div><p>${collection.length===0 ? 'Rak masih kosong. Yuk tambah seri manga pertamamu.' : 'Tidak ada seri yang cocok.'}</p></div>`; return; }
     listEl.innerHTML = items.map(e=>{
       const isLn = e.type === 'light_novel'; const stats = computeVolStats(e); const pct = stats.total ? Math.round((stats.owned/stats.total)*100) : 0;
-      const volSummaryHtml = stats.total > 0 ? `<div class="vol-summary"><div class="vol-summary-text">${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} vol</div><div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${isLn?'var(--indigo)':'var(--hanko)'}"></div></div></div>` : `<div class="vol-summary"><div class="empty-vol-hint">Belum ada volume tercatat — ketuk untuk mulai</div></div>`;
+      const volSummaryHtml = stats.total > 0 ? `<div class="vol-summary"><div class="vol-summary-text">${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} vol${stats.totalPrice ? ' • ' + formatRp(stats.totalPrice) : ''}</div><div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${isLn?'var(--indigo)':'var(--hanko)'}"></div></div></div>` : `<div class="vol-summary"><div class="empty-vol-hint">Belum ada volume tercatat — ketuk untuk mulai</div></div>`;
       return `<div class="card ${isLn?'ln':''}" data-id="${e.id}"><div class="card-top"><div><span class="type-badge">${isLn?'LIGHT NOVEL':'MANGA'}</span><div class="card-title">${escapeHtml(e.title)}</div>${e.author ? `<div class="card-author">${escapeHtml(e.author)}</div>` : ''}</div><div class="stamp st-${e.status}">${STATUS_LABEL[e.status]}</div></div>${e.genre ? `<span class="card-genre">${escapeHtml(e.genre)}</span>` : ''}${volSummaryHtml}<div class="card-bottom"><div class="stars">${starsHtml(e.rating||0)}</div><div class="edit-link" data-editid="${e.id}">Edit Info</div></div></div>`;
     }).join('');
 
@@ -541,31 +589,147 @@
   el('entryForm').addEventListener('submit', handleSave); el('saveBtn').addEventListener('click', handleSave);
 
   function hideVolumesSheet(){ volumesSheet.classList.remove('open'); }
-  function closeVolumesView(){ hideVolumesSheet(); backdrop.classList.remove('open'); volEntryId = null; }
+  function closeVolumesView(){ hideVolumesSheet(); backdrop.classList.remove('open'); volEntryId = null; el('volDetailPanel').style.display = 'none'; }
   function openVolumesView(entry){ volEntryId = entry.id; sheet.classList.remove('open'); renderVolumesView(); volumesSheet.classList.add('open'); backdrop.classList.add('open'); }
 
   function renderVolumesView(){
     const entry = collection.find(x=>x.id === volEntryId); if(!entry){ closeVolumesView(); return; }
     const isLn = entry.type === 'light_novel'; const accent = isLn ? 'var(--indigo)' : 'var(--hanko)';
     el('vwBadge').textContent = isLn ? 'LIGHT NOVEL' : 'MANGA'; el('vwBadge').style.background = accent; el('vwTitle').textContent = entry.title; el('vwAuthor').textContent = entry.author || ''; el('vwStamp').textContent = STATUS_LABEL[entry.status]; el('vwStamp').className = 'stamp st-' + entry.status; el('volLegendUnread').style.background = accent;
-    const stats = computeVolStats(entry); el('vwSummary').textContent = stats.total > 0 ? `${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} volume tercatat` : 'Belum ada volume tercatat.';
+    const stats = computeVolStats(entry);
+    el('vwSummary').textContent = stats.total > 0
+      ? `${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} volume tercatat${stats.totalPrice ? ' • Total: ' + formatRp(stats.totalPrice) : ''}`
+      : 'Belum ada volume tercatat.';
     const grid = el('volGrid');
-    let tilesHtml = (entry.volumes || []).map((v, idx)=>{ let cls = 'vol-tile', style = ''; if(v.state === 'owned_unread'){ cls += ' unread'; style = `background:${accent};border-color:${accent};`; } else if(v.state === 'owned_read'){ cls += ' read'; style = `background:var(--ink);border-color:var(--ink);`; } return `<div class="${cls}" data-idx="${idx}" style="${style}">${v.number}</div>`; }).join('');
+    let tilesHtml = (entry.volumes || []).map((v, idx)=>{
+      let cls = 'vol-tile', style = '';
+      if(v.state === 'owned_unread'){ cls += ' unread'; style += `border-color:${accent};`; if(!v.imageUrl) style += `background:${accent};`; }
+      else if(v.state === 'owned_read'){ cls += ' read'; style += `border-color:var(--ink);`; if(!v.imageUrl) style += `background:var(--ink);`; }
+      let inner = `${v.number}`;
+      if(v.imageUrl){
+        const safeUrl = v.imageUrl.replace(/['"]/g,'');
+        style += `background-image:url('${safeUrl}');`;
+        inner = `<span class="vol-num-badge">${v.number}</span>`;
+      }
+      return `<div class="${cls}" data-idx="${idx}" style="${style}">${inner}</div>`;
+    }).join('');
     tilesHtml += `<div class="vol-tile-add" id="addVolTile">＋</div>`; grid.innerHTML = tilesHtml;
     grid.querySelectorAll('.vol-tile').forEach(tile=>{ tile.addEventListener('click', async ()=>{ const idx = parseInt(tile.dataset.idx); const e2 = collection.find(x=>x.id === volEntryId); if(!e2) return; const v = e2.volumes[idx]; v.state = v.state === 'none' ? 'owned_unread' : v.state === 'owned_unread' ? 'owned_read' : 'none'; await saveData(); renderVolumesView(); }); });
-    el('addVolTile').addEventListener('click', async ()=>{ const e2 = collection.find(x=>x.id === volEntryId); if(!e2) return; e2.volumes = e2.volumes || []; const nextNum = e2.volumes.length + 1; e2.volumes.push({ number: nextNum, state: 'owned_unread' }); await saveData(); renderVolumesView(); });
+    el('addVolTile').addEventListener('click', async ()=>{ const e2 = collection.find(x=>x.id === volEntryId); if(!e2) return; e2.volumes = e2.volumes || []; const nextNum = e2.volumes.length + 1; e2.volumes.push({ number: nextNum, state: 'owned_unread', price: 0, imageUrl: '' }); await saveData(); renderVolumesView(); });
+
+    populateVolDetailSelect(entry);
   }
+
+  function populateVolDetailSelect(entry){
+    const select = el('volDetailSelect');
+    select.innerHTML = (entry.volumes||[]).map((v,idx)=> `<option value="${idx}">Volume ${v.number}</option>`).join('');
+    if(select.options.length){ loadVolDetailFields(entry, 0); }
+  }
+  function loadVolDetailFields(entry, idx){
+    const v = entry.volumes[idx];
+    if(!v) return;
+    el('volDetailPrice').value = v.price || '';
+    el('volDetailImage').value = v.imageUrl || '';
+  }
+
+  el('volDetailToggle').addEventListener('click', ()=>{
+    const panel = el('volDetailPanel');
+    panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+  });
+  el('volDetailSelect').addEventListener('change', ()=>{
+    const entry = collection.find(x=>x.id === volEntryId); if(!entry) return;
+    loadVolDetailFields(entry, parseInt(el('volDetailSelect').value));
+  });
+  el('volDetailSaveBtn').addEventListener('click', async ()=>{
+    const entry = collection.find(x=>x.id === volEntryId); if(!entry) return;
+    const idx = parseInt(el('volDetailSelect').value);
+    if(isNaN(idx) || !entry.volumes[idx]) return;
+    entry.volumes[idx].price = el('volDetailPrice').value ? parseInt(el('volDetailPrice').value) : 0;
+    entry.volumes[idx].imageUrl = el('volDetailImage').value.trim();
+    await saveData();
+    renderVolumesView();
+    showToast(`Detail Volume ${entry.volumes[idx].number} disimpan.`);
+  });
 
   el('vwBackBtn').addEventListener('click', closeVolumesView);
   el('vwEditBtn').addEventListener('click', ()=>{ const entry = collection.find(x=>x.id === volEntryId); if(!entry) return; sheetOrigin = 'volumes'; hideVolumesSheet(); openSheet(entry); });
   el('vwDeleteBtn').addEventListener('click', async ()=>{ const entry = collection.find(x=>x.id === volEntryId); if(!entry) return; if(!confirm('Hapus seri ini?')) return; collection = collection.filter(x=>x.id !== volEntryId); closeVolumesView(); await saveData(); showToast('Seri dihapus.'); });
-  el('vwResizeBtn').addEventListener('click', async ()=>{ const entry = collection.find(x=>x.id === volEntryId); if(!entry) return; const val = parseInt(el('vwResizeInput').value); if(!val || val < 0) return; const current = entry.volumes || []; if(val < current.length){ if(!confirm(`Hapus data ${current.length - val} volume terakhir?`)) return; entry.volumes = current.slice(0, val); } else if(val > current.length){ const additions = []; for(let i = current.length + 1; i <= val; i++){ additions.push({ number:i, state:'none' }); } entry.volumes = current.concat(additions); } el('vwResizeInput').value = ''; await saveData(); renderVolumesView(); });
+  el('vwResizeBtn').addEventListener('click', async ()=>{
+    const entry = collection.find(x=>x.id === volEntryId); if(!entry) return;
+    const val = parseInt(el('vwResizeInput').value); if(!val || val < 0) return;
+    const current = entry.volumes || [];
+    if(val < current.length){
+      if(!confirm(`Hapus data ${current.length - val} volume terakhir?`)) return;
+      entry.volumes = current.slice(0, val);
+    } else if(val > current.length){
+      const additions = [];
+      for(let i = current.length + 1; i <= val; i++){ additions.push({ number:i, state:'none', price:0, imageUrl:'' }); }
+      entry.volumes = current.concat(additions);
+    }
+    el('vwResizeInput').value = ''; await saveData(); renderVolumesView();
+  });
   backdrop.addEventListener('click', ()=>{ closeSheet(); closeVolumesView(); });
 
   document.querySelectorAll('#typeChips .chip').forEach(chip=>{ chip.addEventListener('click', ()=>{ document.querySelectorAll('#typeChips .chip').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); filterType = chip.dataset.type; render(); }); });
   document.querySelectorAll('#statusChips .chip').forEach(chip=>{ chip.addEventListener('click', ()=>{ document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); filterStatus = chip.dataset.status; render(); }); });
   el('searchInput').addEventListener('input', (e)=>{ searchQuery = e.target.value; render(); });
-  el('menuBtn').addEventListener('click', async ()=>{ if(!confirm('Hapus SEMUA data?')) return; collection = []; await saveData(); showToast('Semua data telah dihapus.'); });
+
+  // ---- Menu dropdown: export / import / hapus semua ----
+  const menuDropdown = el('menuDropdown');
+  el('menuBtn').addEventListener('click', (e)=>{ e.stopPropagation(); menuDropdown.classList.toggle('open'); });
+  document.addEventListener('click', (e)=>{
+    if(!menuDropdown.contains(e.target) && e.target.id !== 'menuBtn'){ menuDropdown.classList.remove('open'); }
+  });
+
+  el('exportBtn').addEventListener('click', ()=>{
+    menuDropdown.classList.remove('open');
+    const dataStr = JSON.stringify(collection, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rak-baca-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Backup diunduh.');
+  });
+
+  el('importBtn').addEventListener('click', ()=>{
+    menuDropdown.classList.remove('open');
+    el('importFileInput').click();
+  });
+  el('importFileInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt)=>{
+      try{
+        const imported = JSON.parse(evt.target.result);
+        if(!Array.isArray(imported)) throw new Error('format salah');
+        if(!confirm(`Import ${imported.length} seri? Ini akan digabung dengan data yang sudah ada (bukan menimpa).`)){ e.target.value=''; return; }
+        const existingIds = new Set(collection.map(x=>x.id));
+        imported.forEach(item=>{
+          if(existingIds.has(item.id)){ item.id = Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+          item.volumes = item.volumes || [];
+          collection.push(item);
+        });
+        await saveData();
+        showToast(`${imported.length} seri berhasil di-import.`);
+      }catch(err){
+        showToast('Gagal import: file tidak valid.');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  el('clearAllBtn').addEventListener('click', async ()=>{
+    menuDropdown.classList.remove('open');
+    if(!confirm('Hapus SEMUA data?')) return;
+    collection = []; await saveData(); showToast('Semua data telah dihapus.');
+  });
 </script>
 </body>
 </html>
