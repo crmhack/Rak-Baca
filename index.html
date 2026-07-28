@@ -4,17 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>本棚 — Koleksi Manga & Light Novel</title>
-
-<!-- PWA setup -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#B92E22">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Rak Baca">
-<meta name="mobile-web-app-capable" content="yes">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -43,7 +32,6 @@
     position:relative;
     overflow-x:hidden;
   }
-  /* halftone screentone texture */
   body::before{
     content:"";
     position:fixed; inset:0;
@@ -62,390 +50,126 @@
     padding-bottom:100px;
   }
 
-  /* HEADER */
-  header{
-    padding:22px 18px 16px;
-    position:relative;
-  }
-  .logo-row{
-    display:flex;
-    align-items:baseline;
-    gap:10px;
-  }
-  .logo-kanji{
-    font-family:'Anton', sans-serif;
-    font-size:34px;
-    letter-spacing:1px;
-    color:var(--ink);
-    line-height:1;
-  }
-  .logo-sub{
-    font-size:12px;
-    color:var(--muted);
-    letter-spacing:0.5px;
-    font-weight:500;
-  }
-  .stats-line{
-    margin-top:10px;
-    font-family:'JetBrains Mono', monospace;
-    font-size:12px;
-    color:var(--ink);
-    opacity:0.75;
-    letter-spacing:0.2px;
-  }
+  header{ padding:22px 18px 16px; position:relative; }
+  .logo-row{ display:flex; align-items:baseline; gap:10px; }
+  .logo-kanji{ font-family:'Anton', sans-serif; font-size:34px; letter-spacing:1px; color:var(--ink); line-height:1; }
+  .logo-sub{ font-size:12px; color:var(--muted); letter-spacing:0.5px; font-weight:500; }
+  .stats-line{ margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink); opacity:0.75; letter-spacing:0.2px; }
   .stats-line b{ color:var(--hanko); font-weight:600; }
 
-  /* SEARCH + FILTERS */
-  .controls{
-    padding:4px 18px 14px;
-  }
-  .search-box{
-    display:flex;
-    align-items:center;
-    background:var(--white);
-    border:2px solid var(--ink);
-    box-shadow:var(--shadow);
-    padding:9px 12px;
-    gap:8px;
-  }
-  .search-box input{
-    border:none;
-    outline:none;
-    background:transparent;
-    font-family:'Zen Kaku Gothic New', sans-serif;
-    font-size:14px;
-    width:100%;
-    color:var(--ink);
-  }
+  .controls{ padding:4px 18px 14px; }
+  .search-box{ display:flex; align-items:center; background:var(--white); border:2px solid var(--ink); box-shadow:var(--shadow); padding:9px 12px; gap:8px; }
+  .search-box input{ border:none; outline:none; background:transparent; font-family:'Zen Kaku Gothic New', sans-serif; font-size:14px; width:100%; color:var(--ink); }
   .search-box svg{ flex-shrink:0; opacity:0.55; }
 
-  .chip-row{
-    display:flex;
-    gap:7px;
-    margin-top:10px;
-    overflow-x:auto;
-    padding-bottom:2px;
-    scrollbar-width:none;
-  }
+  .chip-row{ display:flex; gap:7px; margin-top:10px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
   .chip-row::-webkit-scrollbar{ display:none; }
-  .chip{
-    flex-shrink:0;
-    font-size:12px;
-    font-weight:500;
-    padding:6px 12px;
-    border:1.5px solid var(--ink);
-    background:transparent;
-    color:var(--ink);
-    cursor:pointer;
-    letter-spacing:0.2px;
-    white-space:nowrap;
-  }
-  .chip.active{
-    background:var(--ink);
-    color:var(--white);
-  }
+  .chip{ flex-shrink:0; font-size:12px; font-weight:500; padding:6px 12px; border:1.5px solid var(--ink); background:transparent; color:var(--ink); cursor:pointer; letter-spacing:0.2px; white-space:nowrap; }
+  .chip.active{ background:var(--ink); color:var(--white); }
   .chip.type-manga.active{ background:var(--hanko); border-color:var(--hanko); }
   .chip.type-ln.active{ background:var(--indigo); border-color:var(--indigo); }
 
-  /* LIST */
-  #list{
-    padding:16px 18px 8px;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-  }
-  .card{
-    position:relative;
-    background:var(--white);
-    border:2px solid var(--ink);
-    box-shadow:var(--shadow);
-    padding:14px 14px 12px 16px;
-    cursor:pointer;
-    transition:transform 0.12s ease;
-  }
+  #list{ padding:16px 18px 8px; display:flex; flex-direction:column; gap:14px; }
+  .card{ position:relative; background:var(--white); border:2px solid var(--ink); box-shadow:var(--shadow); padding:14px 14px 12px 16px; cursor:pointer; transition:transform 0.12s ease; }
   .card:active{ transform:translateY(2px); box-shadow:none; }
-  .card::before{
-    content:"";
-    position:absolute;
-    left:0; top:0; bottom:0;
-    width:6px;
-    background:var(--hanko);
-  }
+  .card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--hanko); }
   .card.ln::before{ background:var(--indigo); }
 
-  .card-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:10px;
-  }
-  .type-badge{
-    display:inline-block;
-    font-size:10px;
-    font-weight:700;
-    letter-spacing:0.5px;
-    padding:2px 7px;
-    color:var(--white);
-    background:var(--hanko);
-    margin-bottom:6px;
-  }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .type-badge{ display:inline-block; font-size:10px; font-weight:700; letter-spacing:0.5px; padding:2px 7px; color:var(--white); background:var(--hanko); margin-bottom:6px; }
   .card.ln .type-badge{ background:var(--indigo); }
 
-  .card-title{
-    font-family:'Zen Kaku Gothic New', sans-serif;
-    font-weight:900;
-    font-size:16.5px;
-    line-height:1.25;
-    margin:0 0 2px;
-  }
-  .card-author{
-    font-size:12px;
-    color:var(--muted);
-    margin:0 0 8px;
-  }
-  .card-genre{
-    display:inline-block;
-    font-size:10.5px;
-    color:var(--ink);
-    background:var(--paper-2);
-    padding:1px 7px;
-    margin-bottom:8px;
-  }
+  .card-title{ font-family:'Zen Kaku Gothic New', sans-serif; font-weight:900; font-size:16.5px; line-height:1.25; margin:0 0 2px; }
+  .card-author{ font-size:12px; color:var(--muted); margin:0 0 8px; }
+  .card-genre{ display:inline-block; font-size:10.5px; color:var(--ink); background:var(--paper-2); padding:1px 7px; margin-bottom:8px; }
 
-  .stamp{
-    font-family:'Anton', sans-serif;
-    font-size:11px;
-    letter-spacing:1px;
-    padding:3px 9px;
-    border:2px solid var(--hanko);
-    color:var(--hanko);
-    transform:rotate(-6deg);
-    opacity:0.9;
-    flex-shrink:0;
-    white-space:nowrap;
-  }
+  .stamp{ font-family:'Anton', sans-serif; font-size:11px; letter-spacing:1px; padding:3px 9px; border:2px solid var(--hanko); color:var(--hanko); transform:rotate(-6deg); opacity:0.9; flex-shrink:0; white-space:nowrap; }
   .stamp.st-reading{ border-color:var(--indigo); color:var(--indigo); }
   .stamp.st-plan{ border-color:var(--gold); color:var(--gold); }
   .stamp.st-on_hold{ border-color:var(--muted); color:var(--muted); }
   .stamp.st-dropped{ border-color:var(--muted); color:var(--muted); text-decoration:line-through; }
 
-  .card-bottom{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    margin-top:2px;
-  }
-  .vol-info{
-    font-family:'JetBrains Mono', monospace;
-    font-size:12px;
-    color:var(--ink);
-  }
-  .progress-track{
-    height:5px;
-    background:var(--paper-2);
-    width:100%;
-    margin-top:4px;
-    max-width:140px;
-  }
-  .progress-fill{
-    height:100%;
-    background:var(--hanko);
-  }
-  .card.ln .progress-fill{ background:var(--indigo); }
-  .stars{
-    font-size:13px;
-    color:var(--gold);
-    letter-spacing:1px;
-    white-space:nowrap;
-  }
-  .stars .off{ color:var(--paper-2); }
+  .vol-summary{ margin:2px 0 10px; }
+  .vol-summary-text{ font-family:'JetBrains Mono', monospace; font-size:11.5px; color:var(--ink); opacity:0.8; margin-bottom:4px; }
+  .empty-vol-hint{ font-size:11.5px; color:var(--muted); font-style:italic; }
+  .progress-track{ height:5px; background:var(--paper-2); width:100%; }
+  .progress-fill{ height:100%; background:var(--hanko); }
 
-  /* EMPTY STATE */
-  .empty{
-    text-align:center;
-    padding:60px 30px;
-    color:var(--muted);
-  }
-  .empty-kanji{
-    font-family:'Anton', sans-serif;
-    font-size:46px;
-    color:var(--screentone);
-    margin-bottom:6px;
-  }
+  .card-bottom{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:2px; }
+  .stars{ font-size:13px; color:var(--gold); letter-spacing:1px; white-space:nowrap; }
+  .stars .off{ color:var(--paper-2); }
+  .edit-link{ font-size:12px; font-weight:600; color:var(--muted); text-decoration:underline; cursor:pointer; }
+  .edit-link:active{ opacity:0.6; }
+
+  .empty{ text-align:center; padding:60px 30px; color:var(--muted); }
+  .empty-kanji{ font-family:'Anton', sans-serif; font-size:46px; color:var(--screentone); margin-bottom:6px; }
   .empty p{ font-size:13px; margin:4px 0; line-height:1.6; }
 
-  /* FAB */
-  .fab{
-    position:fixed;
-    right:20px;
-    bottom:26px;
-    width:56px; height:56px;
-    border-radius:50%;
-    background:var(--hanko);
-    color:var(--white);
-    border:2px solid var(--ink);
-    font-size:28px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    box-shadow:0 3px 0 var(--ink);
-    z-index:20;
-    max-width:520px;
-  }
+  .fab{ position:fixed; right:20px; bottom:26px; width:56px; height:56px; border-radius:50%; background:var(--hanko); color:var(--white); border:2px solid var(--ink); font-size:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 3px 0 var(--ink); z-index:20; max-width:520px; }
   .fab:active{ transform:translateY(3px); box-shadow:none; }
 
-  /* SHEET */
-  .backdrop{
-    position:fixed; inset:0;
-    background:rgba(27,27,30,0.55);
-    z-index:30;
-    opacity:0;
-    pointer-events:none;
-    transition:opacity 0.25s ease;
-  }
+  .backdrop{ position:fixed; inset:0; background:rgba(27,27,30,0.55); z-index:30; opacity:0; pointer-events:none; transition:opacity 0.25s ease; }
   .backdrop.open{ opacity:1; pointer-events:auto; }
 
-  .sheet{
-    position:fixed;
-    left:0; right:0; bottom:0;
-    max-width:520px;
-    margin:0 auto;
-    background:var(--paper);
-    border-top:3px solid var(--ink);
-    z-index:31;
-    transform:translateY(100%);
-    transition:transform 0.28s cubic-bezier(.2,.8,.3,1);
-    max-height:88vh;
-    overflow-y:auto;
-    padding:18px 18px 28px;
-  }
+  .sheet{ position:fixed; left:0; right:0; bottom:0; max-width:520px; margin:0 auto; background:var(--paper); border-top:3px solid var(--ink); z-index:31; transform:translateY(100%); transition:transform 0.28s cubic-bezier(.2,.8,.3,1); max-height:88vh; overflow-y:auto; padding:18px 18px 28px; }
   .sheet.open{ transform:translateY(0); }
-  .sheet-handle{
-    width:40px; height:4px;
-    background:var(--screentone);
-    margin:0 auto 14px;
-  }
-  .sheet h2{
-    font-family:'Anton', sans-serif;
-    font-size:20px;
-    letter-spacing:0.5px;
-    margin:0 0 16px;
-  }
+  .sheet-handle{ width:40px; height:4px; background:var(--screentone); margin:0 auto 14px; }
+  .sheet h2{ font-family:'Anton', sans-serif; font-size:20px; letter-spacing:0.5px; margin:0 0 16px; }
   .field{ margin-bottom:14px; }
-  .field label{
-    display:block;
-    font-size:11.5px;
-    font-weight:700;
-    letter-spacing:0.3px;
-    color:var(--muted);
-    text-transform:uppercase;
-    margin-bottom:5px;
-  }
-  .field input[type=text], .field input[type=number], .field textarea, .field select{
-    width:100%;
-    border:2px solid var(--ink);
-    background:var(--white);
-    padding:9px 10px;
-    font-family:'Zen Kaku Gothic New', sans-serif;
-    font-size:14px;
-    color:var(--ink);
-    outline:none;
-  }
+  .field label{ display:block; font-size:11.5px; font-weight:700; letter-spacing:0.3px; color:var(--muted); text-transform:uppercase; margin-bottom:5px; }
+  .field input[type=text], .field input[type=number], .field textarea, .field select{ width:100%; border:2px solid var(--ink); background:var(--white); padding:9px 10px; font-family:'Zen Kaku Gothic New', sans-serif; font-size:14px; color:var(--ink); outline:none; }
   .field textarea{ resize:vertical; min-height:56px; }
   .row2{ display:flex; gap:10px; }
   .row2 .field{ flex:1; }
 
   .toggle-group{ display:flex; gap:8px; }
-  .toggle-btn{
-    flex:1;
-    text-align:center;
-    padding:9px 6px;
-    border:2px solid var(--ink);
-    background:var(--white);
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
-  }
+  .toggle-btn{ flex:1; text-align:center; padding:9px 6px; border:2px solid var(--ink); background:var(--white); font-size:13px; font-weight:600; cursor:pointer; }
   .toggle-btn.active.manga{ background:var(--hanko); color:var(--white); border-color:var(--hanko); }
   .toggle-btn.active.ln{ background:var(--indigo); color:var(--white); border-color:var(--indigo); }
 
   .status-grid{ display:flex; flex-wrap:wrap; gap:8px; }
-  .status-pill{
-    padding:7px 12px;
-    border:1.5px solid var(--ink);
-    font-size:12.5px;
-    cursor:pointer;
-    background:var(--white);
-  }
+  .status-pill{ padding:7px 12px; border:1.5px solid var(--ink); font-size:12.5px; cursor:pointer; background:var(--white); }
   .status-pill.active{ background:var(--ink); color:var(--white); }
 
   .star-picker{ font-size:26px; letter-spacing:4px; cursor:pointer; color:var(--gold); }
   .star-picker span.off{ color:var(--paper-2); }
 
-  .sheet-actions{
-    display:flex;
-    gap:10px;
-    margin-top:18px;
-  }
-  .btn{
-    flex:1;
-    padding:12px;
-    border:2px solid var(--ink);
-    font-family:'Zen Kaku Gothic New', sans-serif;
-    font-weight:700;
-    font-size:14px;
-    cursor:pointer;
-    text-align:center;
-  }
+  .sheet-actions{ display:flex; gap:10px; margin-top:18px; }
+  .btn{ flex:1; padding:12px; border:2px solid var(--ink); font-family:'Zen Kaku Gothic New', sans-serif; font-weight:700; font-size:14px; cursor:pointer; text-align:center; }
   .btn-primary{ background:var(--ink); color:var(--white); }
   .btn-ghost{ background:transparent; color:var(--ink); }
   .btn-danger{ background:var(--hanko); color:var(--white); border-color:var(--hanko); flex:0.6; }
+  .btn.small{ padding:9px 8px; font-size:12.5px; }
 
-  .top-actions{
-    position:absolute;
-    top:22px; right:18px;
-    font-size:20px;
-    color:var(--muted);
-    cursor:pointer;
-    padding:4px 8px;
-  }
-  .toast{
-    position:fixed;
-    bottom:96px;
-    left:50%;
-    transform:translateX(-50%);
-    background:var(--ink);
-    color:var(--white);
-    padding:9px 16px;
-    font-size:12.5px;
-    z-index:40;
-    max-width:80%;
-    text-align:center;
-    opacity:0;
-    transition:opacity 0.3s ease;
-    pointer-events:none;
-  }
+  .top-actions{ position:absolute; top:22px; right:18px; font-size:20px; color:var(--muted); cursor:pointer; padding:4px 8px; }
+  .toast{ position:fixed; bottom:96px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--white); padding:9px 16px; font-size:12.5px; z-index:40; max-width:80%; text-align:center; opacity:0; transition:opacity 0.3s ease; pointer-events:none; }
   .toast.show{ opacity:1; }
-  .storage-warning{
-    margin:0 18px 8px;
-    background:#F4E3D3;
-    border:1.5px solid var(--gold);
-    padding:8px 10px;
-    font-size:11.5px;
-    color:var(--hanko-deep);
-    display:none;
-  }
+  .storage-warning{ margin:0 18px 8px; background:#F4E3D3; border:1.5px solid var(--gold); padding:8px 10px; font-size:11.5px; color:var(--hanko-deep); display:none; }
+
+  /* Volumes view */
+  .vol-header{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:14px; }
+  .vol-header h2{ font-family:'Anton', sans-serif; font-size:19px; margin:4px 0 2px; }
+  .vol-actions-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .vol-actions-row .btn-danger{ flex:1; }
+  .vol-legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-bottom:12px; align-items:center; }
+  .sw{ display:inline-block; width:10px; height:10px; margin-right:4px; vertical-align:middle; border-radius:2px; }
+  .sw-none{ border:1.5px dashed var(--screentone); background:transparent; }
+  .sw-read{ background:var(--ink); }
+  .vol-summary-line{ font-family:'JetBrains Mono', monospace; font-size:12.5px; margin-bottom:12px; }
+  .vol-grid{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  .vol-tile{ width:46px; height:46px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono', monospace; font-weight:600; font-size:13px; cursor:pointer; user-select:none; border:1.5px dashed var(--screentone); color:var(--muted); background:transparent; }
+  .vol-tile.unread, .vol-tile.read{ border-style:solid; color:var(--white); }
+  .vol-tile-add{ width:46px; height:46px; display:flex; align-items:center; justify-content:center; border:1.5px dashed var(--ink); color:var(--ink); font-size:20px; cursor:pointer; }
+  .vol-tile-add:active{ opacity:0.6; }
+  .vol-resize-row{ display:flex; gap:8px; align-items:center; margin-top:4px; }
+  .vol-resize-row input{ flex:1; border:2px solid var(--ink); background:var(--white); padding:8px 10px; font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="top-actions" id="menuBtn" title="Opsi">⋮</div>
-    <div class="logo-row">
-      <span class="logo-kanji">本棚</span>
-    </div>
+    <div class="logo-row"><span class="logo-kanji">本棚</span></div>
     <div class="logo-sub">Koleksi Manga & Light Novel-ku</div>
     <div class="stats-line" id="statsLine">Memuat data…</div>
   </header>
@@ -480,9 +204,10 @@
 <div class="fab" id="addBtn">＋</div>
 <div class="backdrop" id="backdrop"></div>
 
+<!-- Add / Edit series info sheet -->
 <div class="sheet" id="sheet">
   <div class="sheet-handle"></div>
-  <h2 id="sheetTitle">Tambah Judul</h2>
+  <h2 id="sheetTitle">Tambah Seri</h2>
   <form id="entryForm">
     <div class="field">
       <label>Tipe</label>
@@ -492,7 +217,7 @@
       </div>
     </div>
     <div class="field">
-      <label>Judul</label>
+      <label>Judul Seri</label>
       <input type="text" id="fTitle" placeholder="cth. Vinland Saga" required>
     </div>
     <div class="row2">
@@ -505,18 +230,8 @@
         <input type="text" id="fGenre" placeholder="cth. Sejarah, Aksi">
       </div>
     </div>
-    <div class="row2">
-      <div class="field">
-        <label>Volume Dimiliki</label>
-        <input type="number" id="fOwned" min="0" placeholder="0">
-      </div>
-      <div class="field">
-        <label>Total Volume (opsional)</label>
-        <input type="number" id="fTotal" min="0" placeholder="?">
-      </div>
-    </div>
     <div class="field">
-      <label>Status Baca</label>
+      <label>Status Baca (keseluruhan seri)</label>
       <div class="status-grid" id="statusPicker">
         <div class="status-pill active" data-status="reading">Sedang Dibaca</div>
         <div class="status-pill" data-status="completed">Selesai</div>
@@ -541,17 +256,41 @@
   </form>
 </div>
 
+<!-- Per-series volumes sheet -->
+<div class="sheet" id="volumesSheet">
+  <div class="sheet-handle"></div>
+  <div class="vol-header">
+    <div>
+      <span class="type-badge" id="vwBadge">MANGA</span>
+      <h2 id="vwTitle">Judul</h2>
+      <div class="card-author" id="vwAuthor"></div>
+    </div>
+    <div class="stamp" id="vwStamp">DIBACA</div>
+  </div>
+  <div class="vol-actions-row">
+    <div class="btn btn-ghost small" id="vwEditBtn">✎ Edit Info</div>
+    <div class="btn btn-danger small" id="vwDeleteBtn">🗑 Hapus Seri</div>
+  </div>
+  <div class="vol-legend">
+    <span><i class="sw sw-none"></i>Belum Punya</span>
+    <span><i class="sw" id="volLegendUnread"></i>Punya</span>
+    <span><i class="sw sw-read"></i>Sudah Dibaca</span>
+  </div>
+  <div class="vol-summary-line" id="vwSummary"></div>
+  <div class="vol-grid" id="volGrid"></div>
+  <div class="vol-resize-row">
+    <input type="number" id="vwResizeInput" min="0" placeholder="Atur total volume tercatat">
+    <div class="btn btn-ghost small" id="vwResizeBtn">Atur</div>
+  </div>
+  <div class="btn btn-ghost" id="vwBackBtn" style="margin-top:16px;">Tutup</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 (function(){
   const STORAGE_KEY = 'manga-ln-collection';
-  const STATUS_LABEL = {
-    reading:'DIBACA', completed:'SELESAI', plan:'RENCANA', on_hold:'DITUNDA', dropped:'BERHENTI'
-  };
-  const STATUS_FILTER_LABEL = {
-    reading:'Sedang Dibaca', completed:'Selesai', plan:'Rencana Baca', on_hold:'Ditunda', dropped:'Berhenti'
-  };
+  const STATUS_LABEL = { reading:'DIBACA', completed:'SELESAI', plan:'RENCANA', on_hold:'DITUNDA', dropped:'BERHENTI' };
 
   let collection = [];
   let filterType = 'all';
@@ -562,11 +301,14 @@
   let currentType = 'manga';
   let currentStatus = 'reading';
   let storageAvailable = true;
+  let volEntryId = null;
+  let sheetOrigin = 'list'; // 'list' or 'volumes' — where to return after the edit-info sheet closes
 
   const el = (id) => document.getElementById(id);
   const listEl = el('list');
   const statsLine = el('statsLine');
   const sheet = el('sheet');
+  const volumesSheet = el('volumesSheet');
   const backdrop = el('backdrop');
   const toastEl = el('toast');
 
@@ -581,6 +323,25 @@
     setTimeout(()=> toastEl.classList.remove('show'), 1800);
   }
 
+  function computeVolStats(entry){
+    const volumes = entry.volumes || [];
+    const total = volumes.length;
+    const owned = volumes.filter(v=> v.state === 'owned_unread' || v.state === 'owned_read').length;
+    const read = volumes.filter(v=> v.state === 'owned_read').length;
+    return { total, owned, read };
+  }
+
+  function migrateEntry(e){
+    if(e.volumes) return e;
+    const total = e.total ? parseInt(e.total) : (e.owned ? parseInt(e.owned) : 0);
+    const owned = e.owned ? parseInt(e.owned) : 0;
+    const volumes = [];
+    for(let i=1;i<=total;i++){
+      volumes.push({ number:i, state: i<=owned ? 'owned_unread' : 'none' });
+    }
+    return Object.assign({}, e, { volumes });
+  }
+
   async function loadData(){
     if(!window.storage){
       storageAvailable = false;
@@ -591,7 +352,8 @@
     }
     try{
       const res = await window.storage.get(STORAGE_KEY, false);
-      collection = res && res.value ? JSON.parse(res.value) : [];
+      const parsed = res && res.value ? JSON.parse(res.value) : [];
+      collection = parsed.map(migrateEntry);
     }catch(err){
       collection = [];
     }
@@ -617,10 +379,10 @@
 
   function computeStats(){
     const totalTitles = collection.length;
-    const totalVolumes = collection.reduce((sum,e)=> sum + (parseInt(e.owned)||0), 0);
+    const totalVolumesOwned = collection.reduce((sum,e)=> sum + computeVolStats(e).owned, 0);
     const reading = collection.filter(e=>e.status==='reading').length;
-    if(totalTitles === 0){ statsLine.innerHTML = 'Belum ada judul di rak.'; return; }
-    statsLine.innerHTML = `<b>${totalTitles}</b> judul &nbsp;•&nbsp; <b>${totalVolumes}</b> volume di rak &nbsp;•&nbsp; <b>${reading}</b> sedang dibaca`;
+    if(totalTitles === 0){ statsLine.innerHTML = 'Belum ada seri di rak.'; return; }
+    statsLine.innerHTML = `<b>${totalTitles}</b> seri &nbsp;•&nbsp; <b>${totalVolumesOwned}</b> volume dimiliki &nbsp;•&nbsp; <b>${reading}</b> sedang dibaca`;
   }
 
   function getFiltered(){
@@ -644,17 +406,21 @@
         <div class="empty">
           <div class="empty-kanji">${collection.length===0 ? '空' : '?'}</div>
           <p>${collection.length===0
-            ? 'Rak masih kosong. Yuk tambah judul manga atau light novel pertamamu.'
-            : 'Tidak ada judul yang cocok dengan filter ini.'}</p>
+            ? 'Rak masih kosong. Yuk tambah seri manga atau light novel pertamamu.'
+            : 'Tidak ada seri yang cocok dengan filter ini.'}</p>
         </div>`;
       return;
     }
     listEl.innerHTML = items.map(e=>{
       const isLn = e.type === 'light_novel';
-      const owned = parseInt(e.owned)||0;
-      const total = e.total ? parseInt(e.total) : null;
-      const pct = total ? Math.min(100, Math.round((owned/total)*100)) : 0;
-      const volText = total ? `${owned} / ${total} vol` : `${owned} vol`;
+      const stats = computeVolStats(e);
+      const pct = stats.total ? Math.round((stats.owned/stats.total)*100) : 0;
+      const volSummaryHtml = stats.total > 0
+        ? `<div class="vol-summary">
+             <div class="vol-summary-text">${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} vol</div>
+             <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${isLn?'var(--indigo)':'var(--hanko)'}"></div></div>
+           </div>`
+        : `<div class="vol-summary"><div class="empty-vol-hint">Belum ada volume tercatat — ketuk untuk mulai</div></div>`;
       return `
       <div class="card ${isLn?'ln':''}" data-id="${e.id}">
         <div class="card-top">
@@ -666,12 +432,10 @@
           <div class="stamp st-${e.status}">${STATUS_LABEL[e.status]}</div>
         </div>
         ${e.genre ? `<span class="card-genre">${escapeHtml(e.genre)}</span>` : ''}
+        ${volSummaryHtml}
         <div class="card-bottom">
-          <div>
-            <div class="vol-info">${volText}</div>
-            ${total ? `<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>` : ''}
-          </div>
           <div class="stars">${starsHtml(e.rating||0)}</div>
+          <div class="edit-link" data-editid="${e.id}">Edit Info</div>
         </div>
       </div>`;
     }).join('');
@@ -679,17 +443,24 @@
     listEl.querySelectorAll('.card').forEach(card=>{
       card.addEventListener('click', ()=>{
         const entry = collection.find(x=>x.id === card.dataset.id);
-        if(entry) openSheet(entry);
+        if(entry) openVolumesView(entry);
+      });
+    });
+    listEl.querySelectorAll('.edit-link').forEach(link=>{
+      link.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        const entry = collection.find(x=>x.id === link.dataset.editid);
+        if(entry){ sheetOrigin = 'list'; openSheet(entry); }
       });
     });
   }
+
+  /* ---------- Add / Edit info sheet ---------- */
 
   function resetForm(){
     el('fTitle').value = '';
     el('fAuthor').value = '';
     el('fGenre').value = '';
-    el('fOwned').value = '';
-    el('fTotal').value = '';
     el('fNotes').value = '';
     currentRating = 0;
     currentType = 'manga';
@@ -722,12 +493,10 @@
     resetForm();
     if(entry){
       editingId = entry.id;
-      el('sheetTitle').textContent = 'Edit Judul';
+      el('sheetTitle').textContent = 'Edit Info Seri';
       el('fTitle').value = entry.title || '';
       el('fAuthor').value = entry.author || '';
       el('fGenre').value = entry.genre || '';
-      el('fOwned').value = entry.owned || '';
-      el('fTotal').value = entry.total || '';
       el('fNotes').value = entry.notes || '';
       currentRating = entry.rating || 0;
       currentType = entry.type || 'manga';
@@ -736,8 +505,9 @@
       el('deleteBtn').style.display = 'block';
     } else {
       editingId = null;
-      el('sheetTitle').textContent = 'Tambah Judul';
+      el('sheetTitle').textContent = 'Tambah Seri';
     }
+    volumesSheet.classList.remove('open');
     sheet.classList.add('open');
     backdrop.classList.add('open');
   }
@@ -761,24 +531,25 @@
     updateStars();
   });
 
-  el('addBtn').addEventListener('click', ()=> openSheet(null));
+  el('addBtn').addEventListener('click', ()=> { sheetOrigin = 'list'; openSheet(null); });
   el('cancelBtn').addEventListener('click', (e)=>{ e.preventDefault(); closeSheet(); });
-  backdrop.addEventListener('click', closeSheet);
 
   el('deleteBtn').addEventListener('click', async (e)=>{
     e.preventDefault();
     if(!editingId) return;
-    if(!confirm('Hapus judul ini dari rak?')) return;
+    if(!confirm('Hapus seri ini dari rak beserta semua data volumenya?')) return;
     collection = collection.filter(x=>x.id !== editingId);
     closeSheet();
+    if(sheetOrigin === 'volumes'){ volEntryId = null; sheetOrigin = 'list'; }
     await saveData();
-    showToast('Judul dihapus.');
+    showToast('Seri dihapus.');
   });
 
-  el('entryForm').addEventListener('submit', async (e)=>{
-    e.preventDefault();
+  async function handleSave(ev){
+    if(ev) ev.preventDefault();
     const title = el('fTitle').value.trim();
     if(!title){ showToast('Judul wajib diisi.'); return; }
+    const existing = editingId ? collection.find(x=>x.id===editingId) : null;
     const entry = {
       id: editingId || (Date.now().toString(36) + Math.random().toString(36).slice(2,8)),
       title,
@@ -786,21 +557,139 @@
       genre: el('fGenre').value.trim(),
       type: currentType,
       status: currentStatus,
-      owned: el('fOwned').value ? parseInt(el('fOwned').value) : 0,
-      total: el('fTotal').value ? parseInt(el('fTotal').value) : null,
       rating: currentRating,
       notes: el('fNotes').value.trim(),
-      dateAdded: editingId ? (collection.find(x=>x.id===editingId)||{}).dateAdded || Date.now() : Date.now()
+      dateAdded: existing ? existing.dateAdded : Date.now(),
+      volumes: existing ? (existing.volumes || []) : []
     };
     if(editingId){
       collection = collection.map(x=> x.id === editingId ? entry : x);
     } else {
       collection.push(entry);
     }
+    const wasVolumesOrigin = sheetOrigin === 'volumes';
     closeSheet();
     await saveData();
-    showToast(editingId ? 'Perubahan disimpan.' : 'Judul ditambahkan.');
+    showToast(editingId ? 'Perubahan disimpan.' : 'Seri ditambahkan.');
+    if(wasVolumesOrigin){
+      volEntryId = entry.id;
+      renderVolumesView();
+      volumesSheet.classList.add('open');
+      backdrop.classList.add('open');
+    }
+    sheetOrigin = 'list';
+  }
+  el('entryForm').addEventListener('submit', handleSave);
+  el('saveBtn').addEventListener('click', handleSave);
+
+  /* ---------- Volumes view ---------- */
+
+  function hideVolumesSheet(){ volumesSheet.classList.remove('open'); }
+  function closeVolumesView(){ hideVolumesSheet(); backdrop.classList.remove('open'); volEntryId = null; }
+
+  function openVolumesView(entry){
+    volEntryId = entry.id;
+    sheet.classList.remove('open');
+    renderVolumesView();
+    volumesSheet.classList.add('open');
+    backdrop.classList.add('open');
+  }
+
+  function renderVolumesView(){
+    const entry = collection.find(x=>x.id === volEntryId);
+    if(!entry){ closeVolumesView(); return; }
+    const isLn = entry.type === 'light_novel';
+    const accent = isLn ? 'var(--indigo)' : 'var(--hanko)';
+    el('vwBadge').textContent = isLn ? 'LIGHT NOVEL' : 'MANGA';
+    el('vwBadge').style.background = accent;
+    el('vwTitle').textContent = entry.title;
+    el('vwAuthor').textContent = entry.author || '';
+    el('vwStamp').textContent = STATUS_LABEL[entry.status];
+    el('vwStamp').className = 'stamp st-' + entry.status;
+    el('volLegendUnread').style.background = accent;
+
+    const stats = computeVolStats(entry);
+    el('vwSummary').textContent = stats.total > 0
+      ? `${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} volume tercatat`
+      : 'Belum ada volume tercatat. Tambah volume pertama di bawah.';
+
+    const grid = el('volGrid');
+    let tilesHtml = (entry.volumes || []).map((v, idx)=>{
+      let cls = 'vol-tile', style = '';
+      if(v.state === 'owned_unread'){ cls += ' unread'; style = `background:${accent};border-color:${accent};`; }
+      else if(v.state === 'owned_read'){ cls += ' read'; style = `background:var(--ink);border-color:var(--ink);`; }
+      return `<div class="${cls}" data-idx="${idx}" style="${style}">${v.number}</div>`;
+    }).join('');
+    tilesHtml += `<div class="vol-tile-add" id="addVolTile">＋</div>`;
+    grid.innerHTML = tilesHtml;
+
+    grid.querySelectorAll('.vol-tile').forEach(tile=>{
+      tile.addEventListener('click', async ()=>{
+        const idx = parseInt(tile.dataset.idx);
+        const e2 = collection.find(x=>x.id === volEntryId);
+        if(!e2) return;
+        const v = e2.volumes[idx];
+        v.state = v.state === 'none' ? 'owned_unread' : v.state === 'owned_unread' ? 'owned_read' : 'none';
+        await saveData();
+        renderVolumesView();
+      });
+    });
+    el('addVolTile').addEventListener('click', async ()=>{
+      const e2 = collection.find(x=>x.id === volEntryId);
+      if(!e2) return;
+      e2.volumes = e2.volumes || [];
+      const nextNum = e2.volumes.length + 1;
+      e2.volumes.push({ number: nextNum, state: 'owned_unread' });
+      await saveData();
+      renderVolumesView();
+    });
+  }
+
+  el('vwBackBtn').addEventListener('click', closeVolumesView);
+
+  el('vwEditBtn').addEventListener('click', ()=>{
+    const entry = collection.find(x=>x.id === volEntryId);
+    if(!entry) return;
+    sheetOrigin = 'volumes';
+    hideVolumesSheet();
+    openSheet(entry);
   });
+
+  el('vwDeleteBtn').addEventListener('click', async ()=>{
+    const entry = collection.find(x=>x.id === volEntryId);
+    if(!entry) return;
+    if(!confirm('Hapus seri ini beserta semua data volumenya?')) return;
+    collection = collection.filter(x=>x.id !== volEntryId);
+    closeVolumesView();
+    await saveData();
+    showToast('Seri dihapus.');
+  });
+
+  el('vwResizeBtn').addEventListener('click', async ()=>{
+    const entry = collection.find(x=>x.id === volEntryId);
+    if(!entry) return;
+    const val = parseInt(el('vwResizeInput').value);
+    if(!val || val < 0) return;
+    const current = entry.volumes || [];
+    if(val < current.length){
+      if(!confirm(`Ini akan menghapus data ${current.length - val} volume terakhir. Lanjutkan?`)) return;
+      entry.volumes = current.slice(0, val);
+    } else if(val > current.length){
+      const additions = [];
+      for(let i = current.length + 1; i <= val; i++){ additions.push({ number:i, state:'none' }); }
+      entry.volumes = current.concat(additions);
+    }
+    el('vwResizeInput').value = '';
+    await saveData();
+    renderVolumesView();
+  });
+
+  backdrop.addEventListener('click', ()=>{
+    closeSheet();
+    closeVolumesView();
+  });
+
+  /* ---------- Filters & search ---------- */
 
   document.querySelectorAll('#typeChips .chip').forEach(chip=>{
     chip.addEventListener('click', ()=>{
@@ -818,7 +707,6 @@
       render();
     });
   });
-
   el('searchInput').addEventListener('input', (e)=>{
     searchQuery = e.target.value;
     render();
@@ -832,14 +720,6 @@
   });
 
   loadData();
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('service-worker.js').catch(() => {
-        // Silently ignore — app still works without offline caching.
-      });
-    });
-  }
 })();
 </script>
 </body>
