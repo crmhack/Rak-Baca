@@ -54,6 +54,7 @@
   .logo-row{ display:flex; align-items:baseline; gap:10px; }
   .logo-kanji{ font-family:'Anton', sans-serif; font-size:34px; letter-spacing:1px; color:var(--ink); line-height:1; }
   .logo-sub{ font-size:12px; color:var(--muted); letter-spacing:0.5px; font-weight:500; }
+  .user-line{ font-size:11px; color:var(--muted); margin-top:2px; }
   .stats-line{ margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink); opacity:0.75; letter-spacing:0.2px; }
   .stats-line b{ color:var(--hanko); font-weight:600; }
 
@@ -117,7 +118,7 @@
   .sheet h2{ font-family:'Anton', sans-serif; font-size:20px; letter-spacing:0.5px; margin:0 0 16px; }
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:11.5px; font-weight:700; letter-spacing:0.3px; color:var(--muted); text-transform:uppercase; margin-bottom:5px; }
-  .field input[type=text], .field input[type=number], .field textarea, .field select{ width:100%; border:2px solid var(--ink); background:var(--white); padding:9px 10px; font-family:'Zen Kaku Gothic New', sans-serif; font-size:14px; color:var(--ink); outline:none; }
+  .field input[type=text], .field input[type=number], .field input[type=email], .field input[type=password], .field textarea, .field select{ width:100%; border:2px solid var(--ink); background:var(--white); padding:9px 10px; font-family:'Zen Kaku Gothic New', sans-serif; font-size:14px; color:var(--ink); outline:none; }
   .field textarea{ resize:vertical; min-height:56px; }
   .row2{ display:flex; gap:10px; }
   .row2 .field{ flex:1; }
@@ -141,7 +142,8 @@
   .btn-danger{ background:var(--hanko); color:var(--white); border-color:var(--hanko); flex:0.6; }
   .btn.small{ padding:9px 8px; font-size:12.5px; }
 
-  .top-actions{ position:absolute; top:22px; right:18px; font-size:20px; color:var(--muted); cursor:pointer; padding:4px 8px; }
+  .top-actions-row{ position:absolute; top:22px; right:18px; display:flex; gap:12px; }
+  .top-icon-btn{ font-size:19px; color:var(--muted); cursor:pointer; padding:4px 6px; }
   .toast{ position:fixed; bottom:96px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--white); padding:9px 16px; font-size:12.5px; z-index:40; max-width:80%; text-align:center; opacity:0; transition:opacity 0.3s ease; pointer-events:none; }
   .toast.show{ opacity:1; }
   .storage-warning{ margin:0 18px 8px; background:#F4E3D3; border:1.5px solid var(--gold); padding:8px 10px; font-size:11.5px; color:var(--hanko-deep); display:none; }
@@ -163,15 +165,54 @@
   .vol-tile-add:active{ opacity:0.6; }
   .vol-resize-row{ display:flex; gap:8px; align-items:center; margin-top:4px; }
   .vol-resize-row input{ flex:1; border:2px solid var(--ink); background:var(--white); padding:8px 10px; font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; }
+
+  /* Auth screen */
+  .auth-screen{ position:fixed; inset:0; background:var(--paper); z-index:50; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .auth-screen::before{ content:""; position:fixed; inset:0; background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.3px); background-size: 9px 9px; opacity:0.05; pointer-events:none; }
+  .auth-card{ position:relative; width:100%; max-width:360px; background:var(--white); border:2px solid var(--ink); box-shadow:var(--shadow); padding:28px 22px 22px; }
+  .auth-card .logo-kanji{ font-size:40px; text-align:center; display:block; }
+  .auth-card .logo-sub{ text-align:center; display:block; margin-bottom:20px; }
+  .auth-tabs{ display:flex; border:2px solid var(--ink); margin-bottom:18px; }
+  .auth-tab{ flex:1; text-align:center; padding:9px; font-size:13px; font-weight:700; cursor:pointer; }
+  .auth-tab.active{ background:var(--ink); color:var(--white); }
+  .auth-error{ font-size:12px; margin:-6px 0 12px; min-height:14px; color:var(--hanko); }
+  .auth-forgot{ text-align:center; font-size:12px; color:var(--muted); text-decoration:underline; margin-top:14px; cursor:pointer; }
 </style>
 </head>
 <body>
+
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <span class="logo-kanji">本棚</span>
+    <span class="logo-sub">Masuk buat mulai nyatet koleksi</span>
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-mode="login">Masuk</div>
+      <div class="auth-tab" data-mode="register">Daftar</div>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="authEmail" placeholder="kamu@email.com">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="authPassword" placeholder="Minimal 6 karakter">
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="btn btn-primary" id="authSubmitBtn" style="width:100%;">Masuk</div>
+    <div class="auth-forgot" id="forgotBtn">Lupa password?</div>
+  </div>
+</div>
+
+<div id="mainWrap" style="display:none;">
 <div id="app">
   <header>
-    <div class="top-actions" id="menuBtn" title="Opsi">⋮</div>
-	<div class="top-actions" id="authBtn" style="right: 50px; font-size: 13px; font-weight:bold; margin-top:3px; border: 1.5px solid var(--ink); padding: 2px 8px; border-radius: 4px;">Login</div>
+    <div class="top-actions-row">
+      <div class="top-icon-btn" id="logoutBtn" title="Keluar">⎋</div>
+      <div class="top-icon-btn" id="menuBtn" title="Opsi">⋮</div>
+    </div>
     <div class="logo-row"><span class="logo-kanji">本棚</span></div>
     <div class="logo-sub">Koleksi Manga & Light Novel-ku</div>
+    <div class="user-line" id="userLine"></div>
     <div class="stats-line" id="statsLine">Memuat data…</div>
   </header>
 
@@ -287,14 +328,18 @@
 </div>
 
 <div class="toast" id="toast"></div>
+</div><!-- /mainWrap -->
 
 <script type="module">
-  // 1. IMPORT FIREBASE (Ini yang ngehubungin HTML ke server Google)
+  // 1. IMPORT FIREBASE
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import {
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+    createUserWithEmailAndPassword, signOut, sendPasswordResetEmail
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // 2. PASTE KODE RAHASIA FIREBASE KAMU DI SINI
+  // 2. CONFIG FIREBASE KAMU (sudah benar, tidak perlu diubah)
   const firebaseConfig = {
     apiKey: "AIzaSyA8-a9lXFUcQGHnY-_CI8zvZJQwXdGxsYc",
     authDomain: "rak-buku-5f789.firebaseapp.com",
@@ -308,9 +353,10 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  let currentUser = null; // Buat nyatet siapa yang lagi login
+  let currentUser = null;
+  let authMode = 'login';
 
-  // --- KODE UI & LOGIKA MANGA (Tetap sama seperti punyamu) ---
+  // --- KODE UI & LOGIKA MANGA (tidak diubah) ---
   const STATUS_LABEL = { reading:'DIBACA', completed:'SELESAI', plan:'RENCANA', on_hold:'DITUNDA', dropped:'BERHENTI' };
   let collection = [];
   let filterType = 'all', filterStatus = 'all', searchQuery = '';
@@ -320,18 +366,15 @@
   const el = (id) => document.getElementById(id);
   const listEl = el('list'), statsLine = el('statsLine'), sheet = el('sheet');
   const volumesSheet = el('volumesSheet'), backdrop = el('backdrop'), toastEl = el('toast');
-  const authBtn = el('authBtn');
 
   function escapeHtml(str){ return str ? str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : ''; }
   function showToast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); setTimeout(()=> toastEl.classList.remove('show'), 1800); }
   function computeVolStats(entry){ const v = entry.volumes || []; return { total: v.length, owned: v.filter(x=> x.state.includes('owned')).length, read: v.filter(x=> x.state === 'owned_read').length }; }
 
-  // 4. FUNGSI LOAD & SAVE SEKARANG PAKAI CLOUD FIRESTORE!
+  // 4. LOAD & SAVE PAKAI CLOUD FIRESTORE (tetap koleksi "users" / field "koleksi")
   async function loadData(){
     if(!currentUser){
       collection = [];
-      listEl.innerHTML = `<div class="empty"><div class="empty-kanji">🔒</div><p>Silakan Login Gmail dulu buat buka rak mangamu.</p></div>`;
-      statsLine.innerHTML = "Menunggu login...";
       return;
     }
     try{
@@ -355,38 +398,83 @@
     render();
   }
 
-  // 5. SISTEM LOGIN GMAIL
-  authBtn.addEventListener('click', () => {
-  if(currentUser) {
-    if(confirm('Yakin mau Logout?')) signOut(auth);
-  } else {
-    signInWithRedirect(auth, new GoogleAuthProvider());
+  // 5. SISTEM LOGIN EMAIL/PASSWORD
+  function showApp(){ el('authScreen').style.display = 'none'; el('mainWrap').style.display = 'block'; }
+  function showAuth(){ el('authScreen').style.display = 'flex'; el('mainWrap').style.display = 'none'; }
+
+  function mapAuthError(code){
+    const map = {
+      'auth/email-already-in-use': 'Email ini sudah terdaftar. Coba tab "Masuk".',
+      'auth/invalid-email': 'Format email tidak valid.',
+      'auth/weak-password': 'Password terlalu pendek (minimal 6 karakter).',
+      'auth/user-not-found': 'Email belum terdaftar. Coba tab "Daftar".',
+      'auth/wrong-password': 'Password salah.',
+      'auth/invalid-credential': 'Email atau password salah.',
+      'auth/missing-password': 'Isi password dulu.',
+      'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi sebentar lagi.'
+    };
+    return map[code] || ('Terjadi kesalahan (' + code + ').');
   }
-});
 
-getRedirectResult(auth).catch((err) => {
-  showToast("Gagal Login: " + err.code);
-});
+  document.querySelectorAll('.auth-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      authMode = tab.dataset.mode;
+      el('authSubmitBtn').textContent = authMode === 'login' ? 'Masuk' : 'Daftar';
+      el('authError').textContent = '';
+    });
+  });
 
-  onAuthStateChanged(auth, (user) => {
-    currentUser = user;
-    if(user) {
-      authBtn.textContent = "Logout";
-      authBtn.style.background = "var(--ink)";
-      authBtn.style.color = "var(--white)";
-      showToast("Berhasil Login!");
-      loadData();
-    } else {
-      authBtn.textContent = "Login";
-      authBtn.style.background = "transparent";
-      authBtn.style.color = "var(--ink)";
-      loadData();
+  el('authSubmitBtn').addEventListener('click', async ()=>{
+    const email = el('authEmail').value.trim();
+    const password = el('authPassword').value;
+    el('authError').style.color = 'var(--hanko)';
+    el('authError').textContent = '';
+    if(!email || !password){ el('authError').textContent = 'Isi email dan password dulu.'; return; }
+    try{
+      if(authMode === 'login'){
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
+    }catch(err){
+      el('authError').textContent = mapAuthError(err.code);
     }
   });
 
+  el('forgotBtn').addEventListener('click', async ()=>{
+    const email = el('authEmail').value.trim();
+    if(!email){ el('authError').textContent = 'Isi email dulu buat reset password.'; return; }
+    try{
+      await sendPasswordResetEmail(auth, email);
+      el('authError').style.color = 'var(--indigo)';
+      el('authError').textContent = 'Link reset password sudah dikirim ke email kamu.';
+    }catch(err){
+      el('authError').style.color = 'var(--hanko)';
+      el('authError').textContent = mapAuthError(err.code);
+    }
+  });
+
+  el('logoutBtn').addEventListener('click', async ()=>{
+    if(!confirm('Keluar dari akun ini?')) return;
+    await signOut(auth);
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    if(user){
+      currentUser = user;
+      el('userLine').textContent = 'Masuk sebagai ' + user.email;
+      showApp();
+      await loadData();
+    } else {
+      currentUser = null;
+      showAuth();
+    }
+  });
 
   /* =========================================================
-     DI BAWAH INI ADALAH FUNGSI RENDER DLL ASLI PUNYAMU 
+     DI BAWAH INI ADALAH FUNGSI RENDER DLL ASLI PUNYAMU
      TIDAK ADA YANG DIUBAH SAMA SEKALI
      ========================================================= */
 
@@ -400,10 +488,10 @@ getRedirectResult(auth).catch((err) => {
     statsLine.innerHTML = `<b>${totalTitles}</b> seri &nbsp;•&nbsp; <b>${totalVolumesOwned}</b> volume dimiliki &nbsp;•&nbsp; <b>${reading}</b> sedang dibaca`;
   }
   function getFiltered(){ return collection.filter(e=>{ if(filterType !== 'all' && e.type !== filterType) return false; if(filterStatus !== 'all' && e.status !== filterStatus) return false; if(searchQuery){ const q = searchQuery.toLowerCase(); const hit = (e.title||'').toLowerCase().includes(q) || (e.author||'').toLowerCase().includes(q); if(!hit) return false; } return true; }).sort((a,b)=> (b.dateAdded||0) - (a.dateAdded||0)); }
-  
+
   function render(){
     computeStats();
-    if(!currentUser) return; // Kalau belum login, stop di sini.
+    if(!currentUser) return;
     const items = getFiltered();
     if(items.length === 0){ listEl.innerHTML = `<div class="empty"><div class="empty-kanji">${collection.length===0 ? '空' : '?'}</div><p>${collection.length===0 ? 'Rak masih kosong. Yuk tambah seri manga pertamamu.' : 'Tidak ada seri yang cocok.'}</p></div>`; return; }
     listEl.innerHTML = items.map(e=>{
@@ -420,14 +508,14 @@ getRedirectResult(auth).catch((err) => {
   function updateTypeButtons(){ document.querySelectorAll('.toggle-btn').forEach(b=>{ b.classList.toggle('active', b.dataset.type === currentType); }); }
   function updateStatusButtons(){ document.querySelectorAll('.status-pill').forEach(b=>{ b.classList.toggle('active', b.dataset.status === currentStatus); }); }
   function updateStars(){ const spans = []; for(let i=1;i<=5;i++){ spans.push(i<=currentRating ? '★' : '<span class="off">★</span>'); } el('starPicker').innerHTML = spans.join(''); }
-  
+
   function openSheet(entry){
     if(!currentUser) { showToast("Login dulu ya!"); return; }
     resetForm();
     if(entry){ editingId = entry.id; el('sheetTitle').textContent = 'Edit Info Seri'; el('fTitle').value = entry.title || ''; el('fAuthor').value = entry.author || ''; el('fGenre').value = entry.genre || ''; el('fNotes').value = entry.notes || ''; currentRating = entry.rating || 0; currentType = entry.type || 'manga'; currentStatus = entry.status || 'reading'; updateTypeButtons(); updateStatusButtons(); updateStars(); el('deleteBtn').style.display = 'block'; } else { editingId = null; el('sheetTitle').textContent = 'Tambah Seri'; }
     volumesSheet.classList.remove('open'); sheet.classList.add('open'); backdrop.classList.add('open');
   }
-  
+
   function closeSheet(){ sheet.classList.remove('open'); backdrop.classList.remove('open'); }
   document.querySelectorAll('.toggle-btn').forEach(btn=>{ btn.addEventListener('click', ()=>{ currentType = btn.dataset.type; updateTypeButtons(); }); });
   document.querySelectorAll('.status-pill').forEach(btn=>{ btn.addEventListener('click', ()=>{ currentStatus = btn.dataset.status; updateStatusButtons(); }); });
