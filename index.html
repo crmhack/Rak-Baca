@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>本棚 — Koleksi Manga & Light Novel</title>
+
+<!-- PWA setup -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#B92E22">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rak Baca">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1B1E;
+    --paper:#EAE5D8;
+    --paper-2:#DFD9C9;
+    --screentone:#C7C1B0;
+    --hanko:#B92E22;
+    --hanko-deep:#8f2118;
+    --indigo:#2E3A59;
+    --indigo-2:#455174;
+    --gold:#B4872E;
+    --muted:#8a8578;
+    --white:#FAF8F2;
+    --shadow: 0 2px 0 rgba(27,27,30,0.9);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+  /* halftone screentone texture */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image: radial-gradient(circle, var(--ink) 1px, transparent 1.3px);
+    background-size: 9px 9px;
+    opacity:0.05;
+    pointer-events:none;
+    z-index:0;
+  }
+  #app{
+    position:relative;
+    z-index:1;
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    padding-bottom:100px;
+  }
+
+  /* HEADER */
+  header{
+    padding:22px 18px 16px;
+    position:relative;
+  }
+  .logo-row{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .logo-kanji{
+    font-family:'Anton', sans-serif;
+    font-size:34px;
+    letter-spacing:1px;
+    color:var(--ink);
+    line-height:1;
+  }
+  .logo-sub{
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:0.5px;
+    font-weight:500;
+  }
+  .stats-line{
+    margin-top:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink);
+    opacity:0.75;
+    letter-spacing:0.2px;
+  }
+  .stats-line b{ color:var(--hanko); font-weight:600; }
+
+  /* SEARCH + FILTERS */
+  .controls{
+    padding:4px 18px 14px;
+  }
+  .search-box{
+    display:flex;
+    align-items:center;
+    background:var(--white);
+    border:2px solid var(--ink);
+    box-shadow:var(--shadow);
+    padding:9px 12px;
+    gap:8px;
+  }
+  .search-box input{
+    border:none;
+    outline:none;
+    background:transparent;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:14px;
+    width:100%;
+    color:var(--ink);
+  }
+  .search-box svg{ flex-shrink:0; opacity:0.55; }
+
+  .chip-row{
+    display:flex;
+    gap:7px;
+    margin-top:10px;
+    overflow-x:auto;
+    padding-bottom:2px;
+    scrollbar-width:none;
+  }
+  .chip-row::-webkit-scrollbar{ display:none; }
+  .chip{
+    flex-shrink:0;
+    font-size:12px;
+    font-weight:500;
+    padding:6px 12px;
+    border:1.5px solid var(--ink);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    letter-spacing:0.2px;
+    white-space:nowrap;
+  }
+  .chip.active{
+    background:var(--ink);
+    color:var(--white);
+  }
+  .chip.type-manga.active{ background:var(--hanko); border-color:var(--hanko); }
+  .chip.type-ln.active{ background:var(--indigo); border-color:var(--indigo); }
+
+  /* LIST */
+  #list{
+    padding:16px 18px 8px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .card{
+    position:relative;
+    background:var(--white);
+    border:2px solid var(--ink);
+    box-shadow:var(--shadow);
+    padding:14px 14px 12px 16px;
+    cursor:pointer;
+    transition:transform 0.12s ease;
+  }
+  .card:active{ transform:translateY(2px); box-shadow:none; }
+  .card::before{
+    content:"";
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:6px;
+    background:var(--hanko);
+  }
+  .card.ln::before{ background:var(--indigo); }
+
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .type-badge{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    padding:2px 7px;
+    color:var(--white);
+    background:var(--hanko);
+    margin-bottom:6px;
+  }
+  .card.ln .type-badge{ background:var(--indigo); }
+
+  .card-title{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:900;
+    font-size:16.5px;
+    line-height:1.25;
+    margin:0 0 2px;
+  }
+  .card-author{
+    font-size:12px;
+    color:var(--muted);
+    margin:0 0 8px;
+  }
+  .card-genre{
+    display:inline-block;
+    font-size:10.5px;
+    color:var(--ink);
+    background:var(--paper-2);
+    padding:1px 7px;
+    margin-bottom:8px;
+  }
+
+  .stamp{
+    font-family:'Anton', sans-serif;
+    font-size:11px;
+    letter-spacing:1px;
+    padding:3px 9px;
+    border:2px solid var(--hanko);
+    color:var(--hanko);
+    transform:rotate(-6deg);
+    opacity:0.9;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .stamp.st-reading{ border-color:var(--indigo); color:var(--indigo); }
+  .stamp.st-plan{ border-color:var(--gold); color:var(--gold); }
+  .stamp.st-on_hold{ border-color:var(--muted); color:var(--muted); }
+  .stamp.st-dropped{ border-color:var(--muted); color:var(--muted); text-decoration:line-through; }
+
+  .card-bottom{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:2px;
+  }
+  .vol-info{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink);
+  }
+  .progress-track{
+    height:5px;
+    background:var(--paper-2);
+    width:100%;
+    margin-top:4px;
+    max-width:140px;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--hanko);
+  }
+  .card.ln .progress-fill{ background:var(--indigo); }
+  .stars{
+    font-size:13px;
+    color:var(--gold);
+    letter-spacing:1px;
+    white-space:nowrap;
+  }
+  .stars .off{ color:var(--paper-2); }
+
+  /* EMPTY STATE */
+  .empty{
+    text-align:center;
+    padding:60px 30px;
+    color:var(--muted);
+  }
+  .empty-kanji{
+    font-family:'Anton', sans-serif;
+    font-size:46px;
+    color:var(--screentone);
+    margin-bottom:6px;
+  }
+  .empty p{ font-size:13px; margin:4px 0; line-height:1.6; }
+
+  /* FAB */
+  .fab{
+    position:fixed;
+    right:20px;
+    bottom:26px;
+    width:56px; height:56px;
+    border-radius:50%;
+    background:var(--hanko);
+    color:var(--white);
+    border:2px solid var(--ink);
+    font-size:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 3px 0 var(--ink);
+    z-index:20;
+    max-width:520px;
+  }
+  .fab:active{ transform:translateY(3px); box-shadow:none; }
+
+  /* SHEET */
+  .backdrop{
+    position:fixed; inset:0;
+    background:rgba(27,27,30,0.55);
+    z-index:30;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease;
+  }
+  .backdrop.open{ opacity:1; pointer-events:auto; }
+
+  .sheet{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    max-width:520px;
+    margin:0 auto;
+    background:var(--paper);
+    border-top:3px solid var(--ink);
+    z-index:31;
+    transform:translateY(100%);
+    transition:transform 0.28s cubic-bezier(.2,.8,.3,1);
+    max-height:88vh;
+    overflow-y:auto;
+    padding:18px 18px 28px;
+  }
+  .sheet.open{ transform:translateY(0); }
+  .sheet-handle{
+    width:40px; height:4px;
+    background:var(--screentone);
+    margin:0 auto 14px;
+  }
+  .sheet h2{
+    font-family:'Anton', sans-serif;
+    font-size:20px;
+    letter-spacing:0.5px;
+    margin:0 0 16px;
+  }
+  .field{ margin-bottom:14px; }
+  .field label{
+    display:block;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.3px;
+    color:var(--muted);
+    text-transform:uppercase;
+    margin-bottom:5px;
+  }
+  .field input[type=text], .field input[type=number], .field textarea, .field select{
+    width:100%;
+    border:2px solid var(--ink);
+    background:var(--white);
+    padding:9px 10px;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    outline:none;
+  }
+  .field textarea{ resize:vertical; min-height:56px; }
+  .row2{ display:flex; gap:10px; }
+  .row2 .field{ flex:1; }
+
+  .toggle-group{ display:flex; gap:8px; }
+  .toggle-btn{
+    flex:1;
+    text-align:center;
+    padding:9px 6px;
+    border:2px solid var(--ink);
+    background:var(--white);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .toggle-btn.active.manga{ background:var(--hanko); color:var(--white); border-color:var(--hanko); }
+  .toggle-btn.active.ln{ background:var(--indigo); color:var(--white); border-color:var(--indigo); }
+
+  .status-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+  .status-pill{
+    padding:7px 12px;
+    border:1.5px solid var(--ink);
+    font-size:12.5px;
+    cursor:pointer;
+    background:var(--white);
+  }
+  .status-pill.active{ background:var(--ink); color:var(--white); }
+
+  .star-picker{ font-size:26px; letter-spacing:4px; cursor:pointer; color:var(--gold); }
+  .star-picker span.off{ color:var(--paper-2); }
+
+  .sheet-actions{
+    display:flex;
+    gap:10px;
+    margin-top:18px;
+  }
+  .btn{
+    flex:1;
+    padding:12px;
+    border:2px solid var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    text-align:center;
+  }
+  .btn-primary{ background:var(--ink); color:var(--white); }
+  .btn-ghost{ background:transparent; color:var(--ink); }
+  .btn-danger{ background:var(--hanko); color:var(--white); border-color:var(--hanko); flex:0.6; }
+
+  .top-actions{
+    position:absolute;
+    top:22px; right:18px;
+    font-size:20px;
+    color:var(--muted);
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  .toast{
+    position:fixed;
+    bottom:96px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:var(--white);
+    padding:9px 16px;
+    font-size:12.5px;
+    z-index:40;
+    max-width:80%;
+    text-align:center;
+    opacity:0;
+    transition:opacity 0.3s ease;
+    pointer-events:none;
+  }
+  .toast.show{ opacity:1; }
+  .storage-warning{
+    margin:0 18px 8px;
+    background:#F4E3D3;
+    border:1.5px solid var(--gold);
+    padding:8px 10px;
+    font-size:11.5px;
+    color:var(--hanko-deep);
+    display:none;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="top-actions" id="menuBtn" title="Opsi">⋮</div>
+    <div class="logo-row">
+      <span class="logo-kanji">本棚</span>
+    </div>
+    <div class="logo-sub">Koleksi Manga & Light Novel-ku</div>
+    <div class="stats-line" id="statsLine">Memuat data…</div>
+  </header>
+
+  <div class="storage-warning" id="storageWarning">
+    Penyimpanan tidak tersedia di sesi ini — perubahan tidak akan tersimpan setelah ditutup.
+  </div>
+
+  <div class="controls">
+    <div class="search-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Cari judul atau penulis…">
+    </div>
+    <div class="chip-row" id="typeChips">
+      <div class="chip active" data-type="all">Semua</div>
+      <div class="chip type-manga" data-type="manga">Manga</div>
+      <div class="chip type-ln" data-type="light_novel">Light Novel</div>
+    </div>
+    <div class="chip-row" id="statusChips">
+      <div class="chip active" data-status="all">Semua Status</div>
+      <div class="chip" data-status="reading">Sedang Dibaca</div>
+      <div class="chip" data-status="completed">Selesai</div>
+      <div class="chip" data-status="plan">Rencana Baca</div>
+      <div class="chip" data-status="on_hold">Ditunda</div>
+      <div class="chip" data-status="dropped">Berhenti</div>
+    </div>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<div class="fab" id="addBtn">＋</div>
+<div class="backdrop" id="backdrop"></div>
+
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <h2 id="sheetTitle">Tambah Judul</h2>
+  <form id="entryForm">
+    <div class="field">
+      <label>Tipe</label>
+      <div class="toggle-group">
+        <div class="toggle-btn manga active" data-type="manga">Manga</div>
+        <div class="toggle-btn ln" data-type="light_novel">Light Novel</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Judul</label>
+      <input type="text" id="fTitle" placeholder="cth. Vinland Saga" required>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Penulis / Mangaka</label>
+        <input type="text" id="fAuthor" placeholder="cth. Makoto Yukimura">
+      </div>
+      <div class="field">
+        <label>Genre</label>
+        <input type="text" id="fGenre" placeholder="cth. Sejarah, Aksi">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Volume Dimiliki</label>
+        <input type="number" id="fOwned" min="0" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Total Volume (opsional)</label>
+        <input type="number" id="fTotal" min="0" placeholder="?">
+      </div>
+    </div>
+    <div class="field">
+      <label>Status Baca</label>
+      <div class="status-grid" id="statusPicker">
+        <div class="status-pill active" data-status="reading">Sedang Dibaca</div>
+        <div class="status-pill" data-status="completed">Selesai</div>
+        <div class="status-pill" data-status="plan">Rencana Baca</div>
+        <div class="status-pill" data-status="on_hold">Ditunda</div>
+        <div class="status-pill" data-status="dropped">Berhenti</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Rating</label>
+      <div class="star-picker" id="starPicker">☆☆☆☆☆</div>
+    </div>
+    <div class="field">
+      <label>Catatan (opsional)</label>
+      <textarea id="fNotes" placeholder="cth. Pinjam dari siapa, edisi cetakan, dsb."></textarea>
+    </div>
+    <div class="sheet-actions">
+      <div class="btn btn-danger" id="deleteBtn" style="display:none;">Hapus</div>
+      <div class="btn btn-ghost" id="cancelBtn">Batal</div>
+      <div class="btn btn-primary" id="saveBtn">Simpan</div>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'manga-ln-collection';
+  const STATUS_LABEL = {
+    reading:'DIBACA', completed:'SELESAI', plan:'RENCANA', on_hold:'DITUNDA', dropped:'BERHENTI'
+  };
+  const STATUS_FILTER_LABEL = {
+    reading:'Sedang Dibaca', completed:'Selesai', plan:'Rencana Baca', on_hold:'Ditunda', dropped:'Berhenti'
+  };
+
+  let collection = [];
+  let filterType = 'all';
+  let filterStatus = 'all';
+  let searchQuery = '';
+  let editingId = null;
+  let currentRating = 0;
+  let currentType = 'manga';
+  let currentStatus = 'reading';
+  let storageAvailable = true;
+
+  const el = (id) => document.getElementById(id);
+  const listEl = el('list');
+  const statsLine = el('statsLine');
+  const sheet = el('sheet');
+  const backdrop = el('backdrop');
+  const toastEl = el('toast');
+
+  function escapeHtml(str){
+    if(!str) return '';
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(()=> toastEl.classList.remove('show'), 1800);
+  }
+
+  async function loadData(){
+    if(!window.storage){
+      storageAvailable = false;
+      el('storageWarning').style.display = 'block';
+      collection = [];
+      render();
+      return;
+    }
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      collection = res && res.value ? JSON.parse(res.value) : [];
+    }catch(err){
+      collection = [];
+    }
+    render();
+  }
+
+  async function saveData(){
+    if(!storageAvailable) { render(); return; }
+    try{
+      const result = await window.storage.set(STORAGE_KEY, JSON.stringify(collection), false);
+      if(!result){ showToast('Gagal menyimpan, coba lagi.'); }
+    }catch(err){
+      showToast('Gagal menyimpan, coba lagi.');
+    }
+    render();
+  }
+
+  function starsHtml(rating){
+    let out = '';
+    for(let i=1;i<=5;i++){ out += i<=rating ? '★' : '<span class="off">★</span>'; }
+    return out;
+  }
+
+  function computeStats(){
+    const totalTitles = collection.length;
+    const totalVolumes = collection.reduce((sum,e)=> sum + (parseInt(e.owned)||0), 0);
+    const reading = collection.filter(e=>e.status==='reading').length;
+    if(totalTitles === 0){ statsLine.innerHTML = 'Belum ada judul di rak.'; return; }
+    statsLine.innerHTML = `<b>${totalTitles}</b> judul &nbsp;•&nbsp; <b>${totalVolumes}</b> volume di rak &nbsp;•&nbsp; <b>${reading}</b> sedang dibaca`;
+  }
+
+  function getFiltered(){
+    return collection.filter(e=>{
+      if(filterType !== 'all' && e.type !== filterType) return false;
+      if(filterStatus !== 'all' && e.status !== filterStatus) return false;
+      if(searchQuery){
+        const q = searchQuery.toLowerCase();
+        const hit = (e.title||'').toLowerCase().includes(q) || (e.author||'').toLowerCase().includes(q);
+        if(!hit) return false;
+      }
+      return true;
+    }).sort((a,b)=> (b.dateAdded||0) - (a.dateAdded||0));
+  }
+
+  function render(){
+    computeStats();
+    const items = getFiltered();
+    if(items.length === 0){
+      listEl.innerHTML = `
+        <div class="empty">
+          <div class="empty-kanji">${collection.length===0 ? '空' : '?'}</div>
+          <p>${collection.length===0
+            ? 'Rak masih kosong. Yuk tambah judul manga atau light novel pertamamu.'
+            : 'Tidak ada judul yang cocok dengan filter ini.'}</p>
+        </div>`;
+      return;
+    }
+    listEl.innerHTML = items.map(e=>{
+      const isLn = e.type === 'light_novel';
+      const owned = parseInt(e.owned)||0;
+      const total = e.total ? parseInt(e.total) : null;
+      const pct = total ? Math.min(100, Math.round((owned/total)*100)) : 0;
+      const volText = total ? `${owned} / ${total} vol` : `${owned} vol`;
+      return `
+      <div class="card ${isLn?'ln':''}" data-id="${e.id}">
+        <div class="card-top">
+          <div>
+            <span class="type-badge">${isLn?'LIGHT NOVEL':'MANGA'}</span>
+            <div class="card-title">${escapeHtml(e.title)}</div>
+            ${e.author ? `<div class="card-author">${escapeHtml(e.author)}</div>` : ''}
+          </div>
+          <div class="stamp st-${e.status}">${STATUS_LABEL[e.status]}</div>
+        </div>
+        ${e.genre ? `<span class="card-genre">${escapeHtml(e.genre)}</span>` : ''}
+        <div class="card-bottom">
+          <div>
+            <div class="vol-info">${volText}</div>
+            ${total ? `<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>` : ''}
+          </div>
+          <div class="stars">${starsHtml(e.rating||0)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    listEl.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('click', ()=>{
+        const entry = collection.find(x=>x.id === card.dataset.id);
+        if(entry) openSheet(entry);
+      });
+    });
+  }
+
+  function resetForm(){
+    el('fTitle').value = '';
+    el('fAuthor').value = '';
+    el('fGenre').value = '';
+    el('fOwned').value = '';
+    el('fTotal').value = '';
+    el('fNotes').value = '';
+    currentRating = 0;
+    currentType = 'manga';
+    currentStatus = 'reading';
+    updateTypeButtons();
+    updateStatusButtons();
+    updateStars();
+    el('deleteBtn').style.display = 'none';
+  }
+
+  function updateTypeButtons(){
+    document.querySelectorAll('.toggle-btn').forEach(b=>{
+      b.classList.toggle('active', b.dataset.type === currentType);
+    });
+  }
+  function updateStatusButtons(){
+    document.querySelectorAll('.status-pill').forEach(b=>{
+      b.classList.toggle('active', b.dataset.status === currentStatus);
+    });
+  }
+  function updateStars(){
+    const spans = [];
+    for(let i=1;i<=5;i++){
+      spans.push(i<=currentRating ? '★' : '<span class="off">★</span>');
+    }
+    el('starPicker').innerHTML = spans.join('');
+  }
+
+  function openSheet(entry){
+    resetForm();
+    if(entry){
+      editingId = entry.id;
+      el('sheetTitle').textContent = 'Edit Judul';
+      el('fTitle').value = entry.title || '';
+      el('fAuthor').value = entry.author || '';
+      el('fGenre').value = entry.genre || '';
+      el('fOwned').value = entry.owned || '';
+      el('fTotal').value = entry.total || '';
+      el('fNotes').value = entry.notes || '';
+      currentRating = entry.rating || 0;
+      currentType = entry.type || 'manga';
+      currentStatus = entry.status || 'reading';
+      updateTypeButtons(); updateStatusButtons(); updateStars();
+      el('deleteBtn').style.display = 'block';
+    } else {
+      editingId = null;
+      el('sheetTitle').textContent = 'Tambah Judul';
+    }
+    sheet.classList.add('open');
+    backdrop.classList.add('open');
+  }
+
+  function closeSheet(){
+    sheet.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+
+  document.querySelectorAll('.toggle-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ currentType = btn.dataset.type; updateTypeButtons(); });
+  });
+  document.querySelectorAll('.status-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ currentStatus = btn.dataset.status; updateStatusButtons(); });
+  });
+  el('starPicker').addEventListener('click', (ev)=>{
+    const rect = el('starPicker').getBoundingClientRect();
+    const relX = ev.clientX - rect.left;
+    const starWidth = rect.width / 5;
+    currentRating = Math.min(5, Math.max(1, Math.ceil(relX / starWidth)));
+    updateStars();
+  });
+
+  el('addBtn').addEventListener('click', ()=> openSheet(null));
+  el('cancelBtn').addEventListener('click', (e)=>{ e.preventDefault(); closeSheet(); });
+  backdrop.addEventListener('click', closeSheet);
+
+  el('deleteBtn').addEventListener('click', async (e)=>{
+    e.preventDefault();
+    if(!editingId) return;
+    if(!confirm('Hapus judul ini dari rak?')) return;
+    collection = collection.filter(x=>x.id !== editingId);
+    closeSheet();
+    await saveData();
+    showToast('Judul dihapus.');
+  });
+
+  el('entryForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const title = el('fTitle').value.trim();
+    if(!title){ showToast('Judul wajib diisi.'); return; }
+    const entry = {
+      id: editingId || (Date.now().toString(36) + Math.random().toString(36).slice(2,8)),
+      title,
+      author: el('fAuthor').value.trim(),
+      genre: el('fGenre').value.trim(),
+      type: currentType,
+      status: currentStatus,
+      owned: el('fOwned').value ? parseInt(el('fOwned').value) : 0,
+      total: el('fTotal').value ? parseInt(el('fTotal').value) : null,
+      rating: currentRating,
+      notes: el('fNotes').value.trim(),
+      dateAdded: editingId ? (collection.find(x=>x.id===editingId)||{}).dateAdded || Date.now() : Date.now()
+    };
+    if(editingId){
+      collection = collection.map(x=> x.id === editingId ? entry : x);
+    } else {
+      collection.push(entry);
+    }
+    closeSheet();
+    await saveData();
+    showToast(editingId ? 'Perubahan disimpan.' : 'Judul ditambahkan.');
+  });
+
+  document.querySelectorAll('#typeChips .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#typeChips .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      filterType = chip.dataset.type;
+      render();
+    });
+  });
+  document.querySelectorAll('#statusChips .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      filterStatus = chip.dataset.status;
+      render();
+    });
+  });
+
+  el('searchInput').addEventListener('input', (e)=>{
+    searchQuery = e.target.value;
+    render();
+  });
+
+  el('menuBtn').addEventListener('click', async ()=>{
+    if(!confirm('Hapus SEMUA data koleksi? Tindakan ini tidak bisa dibatalkan.')) return;
+    collection = [];
+    await saveData();
+    showToast('Semua data telah dihapus.');
+  });
+
+  loadData();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {
+        // Silently ignore — app still works without offline caching.
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>
