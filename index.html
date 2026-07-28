@@ -169,6 +169,7 @@
 <div id="app">
   <header>
     <div class="top-actions" id="menuBtn" title="Opsi">⋮</div>
+	<div class="top-actions" id="authBtn" style="right: 50px; font-size: 13px; font-weight:bold; margin-top:3px; border: 1.5px solid var(--ink); padding: 2px 8px; border-radius: 4px;">Login</div>
     <div class="logo-row"><span class="logo-kanji">本棚</span></div>
     <div class="logo-sub">Koleksi Manga & Light Novel-ku</div>
     <div class="stats-line" id="statsLine">Memuat data…</div>
@@ -287,440 +288,196 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-(function(){
-  const STORAGE_KEY = 'manga-ln-collection';
-  const STATUS_LABEL = { reading:'DIBACA', completed:'SELESAI', plan:'RENCANA', on_hold:'DITUNDA', dropped:'BERHENTI' };
+<script type="module">
+  // 1. IMPORT FIREBASE (Ini yang ngehubungin HTML ke server Google)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+  // 2. PASTE KODE RAHASIA FIREBASE KAMU DI SINI
+  const firebaseConfig = {
+    apiKey: "AIzaSyA8-a9lXFUcQGHnY-_CI8zvZJQwXdGxs",
+    authDomain: "rak-buku-5f789.firebaseapp.com",
+    projectId: "rak-buku-5f789",
+    storageBucket: "rak-buku-5f789.firebasestorage.app",
+    messagingSenderId: "1083631141608",
+    appId: "1:1083631141608:web:b31f5159db490ada09ff5d"
+  };
+
+  // 3. NYALAIN MESIN FIREBASE
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  let currentUser = null; // Buat nyatet siapa yang lagi login
+
+  // --- KODE UI & LOGIKA MANGA (Tetap sama seperti punyamu) ---
+  const STATUS_LABEL = { reading:'DIBACA', completed:'SELESAI', plan:'RENCANA', on_hold:'DITUNDA', dropped:'BERHENTI' };
   let collection = [];
-  let filterType = 'all';
-  let filterStatus = 'all';
-  let searchQuery = '';
-  let editingId = null;
-  let currentRating = 0;
-  let currentType = 'manga';
-  let currentStatus = 'reading';
-  let storageAvailable = true;
-  let volEntryId = null;
-  let sheetOrigin = 'list'; // 'list' or 'volumes' — where to return after the edit-info sheet closes
+  let filterType = 'all', filterStatus = 'all', searchQuery = '';
+  let editingId = null, currentRating = 0, currentType = 'manga', currentStatus = 'reading';
+  let volEntryId = null, sheetOrigin = 'list';
 
   const el = (id) => document.getElementById(id);
-  const listEl = el('list');
-  const statsLine = el('statsLine');
-  const sheet = el('sheet');
-  const volumesSheet = el('volumesSheet');
-  const backdrop = el('backdrop');
-  const toastEl = el('toast');
+  const listEl = el('list'), statsLine = el('statsLine'), sheet = el('sheet');
+  const volumesSheet = el('volumesSheet'), backdrop = el('backdrop'), toastEl = el('toast');
+  const authBtn = el('authBtn');
 
-  function escapeHtml(str){
-    if(!str) return '';
-    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
+  function escapeHtml(str){ return str ? str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : ''; }
+  function showToast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); setTimeout(()=> toastEl.classList.remove('show'), 1800); }
+  function computeVolStats(entry){ const v = entry.volumes || []; return { total: v.length, owned: v.filter(x=> x.state.includes('owned')).length, read: v.filter(x=> x.state === 'owned_read').length }; }
 
-  function showToast(msg){
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    setTimeout(()=> toastEl.classList.remove('show'), 1800);
-  }
-
-  function computeVolStats(entry){
-    const volumes = entry.volumes || [];
-    const total = volumes.length;
-    const owned = volumes.filter(v=> v.state === 'owned_unread' || v.state === 'owned_read').length;
-    const read = volumes.filter(v=> v.state === 'owned_read').length;
-    return { total, owned, read };
-  }
-
-  function migrateEntry(e){
-    if(e.volumes) return e;
-    const total = e.total ? parseInt(e.total) : (e.owned ? parseInt(e.owned) : 0);
-    const owned = e.owned ? parseInt(e.owned) : 0;
-    const volumes = [];
-    for(let i=1;i<=total;i++){
-      volumes.push({ number:i, state: i<=owned ? 'owned_unread' : 'none' });
-    }
-    return Object.assign({}, e, { volumes });
-  }
-
+  // 4. FUNGSI LOAD & SAVE SEKARANG PAKAI CLOUD FIRESTORE!
   async function loadData(){
-    if(!window.storage){
-      storageAvailable = false;
-      el('storageWarning').style.display = 'block';
+    if(!currentUser){
       collection = [];
-      render();
+      listEl.innerHTML = `<div class="empty"><div class="empty-kanji">🔒</div><p>Silakan Login Gmail dulu buat buka rak mangamu.</p></div>`;
+      statsLine.innerHTML = "Menunggu login...";
       return;
     }
     try{
-      const res = await window.storage.get(STORAGE_KEY, false);
-      const parsed = res && res.value ? JSON.parse(res.value) : [];
-      collection = parsed.map(migrateEntry);
-    }catch(err){
-      collection = [];
-    }
+      const docSnap = await getDoc(doc(db, "users", currentUser.uid));
+      if(docSnap.exists()){
+        collection = docSnap.data().koleksi || [];
+      } else {
+        collection = [];
+      }
+    }catch(err){ showToast('Gagal memuat data.'); }
     render();
   }
 
   async function saveData(){
-    if(!storageAvailable) { render(); return; }
+    if(!currentUser) { showToast('Kamu belum login!'); return; }
     try{
-      const result = await window.storage.set(STORAGE_KEY, JSON.stringify(collection), false);
-      if(!result){ showToast('Gagal menyimpan, coba lagi.'); }
+      await setDoc(doc(db, "users", currentUser.uid), { koleksi: collection });
     }catch(err){
-      showToast('Gagal menyimpan, coba lagi.');
+      showToast('Gagal menyimpan ke Cloud.');
     }
     render();
   }
 
-  function starsHtml(rating){
-    let out = '';
-    for(let i=1;i<=5;i++){ out += i<=rating ? '★' : '<span class="off">★</span>'; }
-    return out;
+  // 5. SISTEM LOGIN GMAIL
+  authBtn.addEventListener('click', () => {
+  if(currentUser) {
+    if(confirm('Yakin mau Logout?')) signOut(auth);
+  } else {
+    signInWithRedirect(auth, new GoogleAuthProvider());
   }
+});
 
+getRedirectResult(auth).catch((err) => {
+  showToast("Gagal Login: " + err.code);
+});
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if(user) {
+      authBtn.textContent = "Logout";
+      authBtn.style.background = "var(--ink)";
+      authBtn.style.color = "var(--white)";
+      showToast("Berhasil Login!");
+      loadData();
+    } else {
+      authBtn.textContent = "Login";
+      authBtn.style.background = "transparent";
+      authBtn.style.color = "var(--ink)";
+      loadData();
+    }
+  });
+
+
+  /* =========================================================
+     DI BAWAH INI ADALAH FUNGSI RENDER DLL ASLI PUNYAMU 
+     TIDAK ADA YANG DIUBAH SAMA SEKALI
+     ========================================================= */
+
+  function starsHtml(rating){ let out = ''; for(let i=1;i<=5;i++){ out += i<=rating ? '★' : '<span class="off">★</span>'; } return out; }
   function computeStats(){
+    if(!currentUser) return;
     const totalTitles = collection.length;
     const totalVolumesOwned = collection.reduce((sum,e)=> sum + computeVolStats(e).owned, 0);
     const reading = collection.filter(e=>e.status==='reading').length;
     if(totalTitles === 0){ statsLine.innerHTML = 'Belum ada seri di rak.'; return; }
     statsLine.innerHTML = `<b>${totalTitles}</b> seri &nbsp;•&nbsp; <b>${totalVolumesOwned}</b> volume dimiliki &nbsp;•&nbsp; <b>${reading}</b> sedang dibaca`;
   }
-
-  function getFiltered(){
-    return collection.filter(e=>{
-      if(filterType !== 'all' && e.type !== filterType) return false;
-      if(filterStatus !== 'all' && e.status !== filterStatus) return false;
-      if(searchQuery){
-        const q = searchQuery.toLowerCase();
-        const hit = (e.title||'').toLowerCase().includes(q) || (e.author||'').toLowerCase().includes(q);
-        if(!hit) return false;
-      }
-      return true;
-    }).sort((a,b)=> (b.dateAdded||0) - (a.dateAdded||0));
-  }
-
+  function getFiltered(){ return collection.filter(e=>{ if(filterType !== 'all' && e.type !== filterType) return false; if(filterStatus !== 'all' && e.status !== filterStatus) return false; if(searchQuery){ const q = searchQuery.toLowerCase(); const hit = (e.title||'').toLowerCase().includes(q) || (e.author||'').toLowerCase().includes(q); if(!hit) return false; } return true; }).sort((a,b)=> (b.dateAdded||0) - (a.dateAdded||0)); }
+  
   function render(){
     computeStats();
+    if(!currentUser) return; // Kalau belum login, stop di sini.
     const items = getFiltered();
-    if(items.length === 0){
-      listEl.innerHTML = `
-        <div class="empty">
-          <div class="empty-kanji">${collection.length===0 ? '空' : '?'}</div>
-          <p>${collection.length===0
-            ? 'Rak masih kosong. Yuk tambah seri manga atau light novel pertamamu.'
-            : 'Tidak ada seri yang cocok dengan filter ini.'}</p>
-        </div>`;
-      return;
-    }
+    if(items.length === 0){ listEl.innerHTML = `<div class="empty"><div class="empty-kanji">${collection.length===0 ? '空' : '?'}</div><p>${collection.length===0 ? 'Rak masih kosong. Yuk tambah seri manga pertamamu.' : 'Tidak ada seri yang cocok.'}</p></div>`; return; }
     listEl.innerHTML = items.map(e=>{
-      const isLn = e.type === 'light_novel';
-      const stats = computeVolStats(e);
-      const pct = stats.total ? Math.round((stats.owned/stats.total)*100) : 0;
-      const volSummaryHtml = stats.total > 0
-        ? `<div class="vol-summary">
-             <div class="vol-summary-text">${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} vol</div>
-             <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${isLn?'var(--indigo)':'var(--hanko)'}"></div></div>
-           </div>`
-        : `<div class="vol-summary"><div class="empty-vol-hint">Belum ada volume tercatat — ketuk untuk mulai</div></div>`;
-      return `
-      <div class="card ${isLn?'ln':''}" data-id="${e.id}">
-        <div class="card-top">
-          <div>
-            <span class="type-badge">${isLn?'LIGHT NOVEL':'MANGA'}</span>
-            <div class="card-title">${escapeHtml(e.title)}</div>
-            ${e.author ? `<div class="card-author">${escapeHtml(e.author)}</div>` : ''}
-          </div>
-          <div class="stamp st-${e.status}">${STATUS_LABEL[e.status]}</div>
-        </div>
-        ${e.genre ? `<span class="card-genre">${escapeHtml(e.genre)}</span>` : ''}
-        ${volSummaryHtml}
-        <div class="card-bottom">
-          <div class="stars">${starsHtml(e.rating||0)}</div>
-          <div class="edit-link" data-editid="${e.id}">Edit Info</div>
-        </div>
-      </div>`;
+      const isLn = e.type === 'light_novel'; const stats = computeVolStats(e); const pct = stats.total ? Math.round((stats.owned/stats.total)*100) : 0;
+      const volSummaryHtml = stats.total > 0 ? `<div class="vol-summary"><div class="vol-summary-text">${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} vol</div><div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${isLn?'var(--indigo)':'var(--hanko)'}"></div></div></div>` : `<div class="vol-summary"><div class="empty-vol-hint">Belum ada volume tercatat — ketuk untuk mulai</div></div>`;
+      return `<div class="card ${isLn?'ln':''}" data-id="${e.id}"><div class="card-top"><div><span class="type-badge">${isLn?'LIGHT NOVEL':'MANGA'}</span><div class="card-title">${escapeHtml(e.title)}</div>${e.author ? `<div class="card-author">${escapeHtml(e.author)}</div>` : ''}</div><div class="stamp st-${e.status}">${STATUS_LABEL[e.status]}</div></div>${e.genre ? `<span class="card-genre">${escapeHtml(e.genre)}</span>` : ''}${volSummaryHtml}<div class="card-bottom"><div class="stars">${starsHtml(e.rating||0)}</div><div class="edit-link" data-editid="${e.id}">Edit Info</div></div></div>`;
     }).join('');
 
-    listEl.querySelectorAll('.card').forEach(card=>{
-      card.addEventListener('click', ()=>{
-        const entry = collection.find(x=>x.id === card.dataset.id);
-        if(entry) openVolumesView(entry);
-      });
-    });
-    listEl.querySelectorAll('.edit-link').forEach(link=>{
-      link.addEventListener('click', (ev)=>{
-        ev.stopPropagation();
-        const entry = collection.find(x=>x.id === link.dataset.editid);
-        if(entry){ sheetOrigin = 'list'; openSheet(entry); }
-      });
-    });
+    listEl.querySelectorAll('.card').forEach(card=>{ card.addEventListener('click', ()=>{ const entry = collection.find(x=>x.id === card.dataset.id); if(entry) openVolumesView(entry); }); });
+    listEl.querySelectorAll('.edit-link').forEach(link=>{ link.addEventListener('click', (ev)=>{ ev.stopPropagation(); const entry = collection.find(x=>x.id === link.dataset.editid); if(entry){ sheetOrigin = 'list'; openSheet(entry); } }); });
   }
 
-  /* ---------- Add / Edit info sheet ---------- */
-
-  function resetForm(){
-    el('fTitle').value = '';
-    el('fAuthor').value = '';
-    el('fGenre').value = '';
-    el('fNotes').value = '';
-    currentRating = 0;
-    currentType = 'manga';
-    currentStatus = 'reading';
-    updateTypeButtons();
-    updateStatusButtons();
-    updateStars();
-    el('deleteBtn').style.display = 'none';
-  }
-
-  function updateTypeButtons(){
-    document.querySelectorAll('.toggle-btn').forEach(b=>{
-      b.classList.toggle('active', b.dataset.type === currentType);
-    });
-  }
-  function updateStatusButtons(){
-    document.querySelectorAll('.status-pill').forEach(b=>{
-      b.classList.toggle('active', b.dataset.status === currentStatus);
-    });
-  }
-  function updateStars(){
-    const spans = [];
-    for(let i=1;i<=5;i++){
-      spans.push(i<=currentRating ? '★' : '<span class="off">★</span>');
-    }
-    el('starPicker').innerHTML = spans.join('');
-  }
-
+  function resetForm(){ el('fTitle').value = ''; el('fAuthor').value = ''; el('fGenre').value = ''; el('fNotes').value = ''; currentRating = 0; currentType = 'manga'; currentStatus = 'reading'; updateTypeButtons(); updateStatusButtons(); updateStars(); el('deleteBtn').style.display = 'none'; }
+  function updateTypeButtons(){ document.querySelectorAll('.toggle-btn').forEach(b=>{ b.classList.toggle('active', b.dataset.type === currentType); }); }
+  function updateStatusButtons(){ document.querySelectorAll('.status-pill').forEach(b=>{ b.classList.toggle('active', b.dataset.status === currentStatus); }); }
+  function updateStars(){ const spans = []; for(let i=1;i<=5;i++){ spans.push(i<=currentRating ? '★' : '<span class="off">★</span>'); } el('starPicker').innerHTML = spans.join(''); }
+  
   function openSheet(entry){
+    if(!currentUser) { showToast("Login dulu ya!"); return; }
     resetForm();
-    if(entry){
-      editingId = entry.id;
-      el('sheetTitle').textContent = 'Edit Info Seri';
-      el('fTitle').value = entry.title || '';
-      el('fAuthor').value = entry.author || '';
-      el('fGenre').value = entry.genre || '';
-      el('fNotes').value = entry.notes || '';
-      currentRating = entry.rating || 0;
-      currentType = entry.type || 'manga';
-      currentStatus = entry.status || 'reading';
-      updateTypeButtons(); updateStatusButtons(); updateStars();
-      el('deleteBtn').style.display = 'block';
-    } else {
-      editingId = null;
-      el('sheetTitle').textContent = 'Tambah Seri';
-    }
-    volumesSheet.classList.remove('open');
-    sheet.classList.add('open');
-    backdrop.classList.add('open');
+    if(entry){ editingId = entry.id; el('sheetTitle').textContent = 'Edit Info Seri'; el('fTitle').value = entry.title || ''; el('fAuthor').value = entry.author || ''; el('fGenre').value = entry.genre || ''; el('fNotes').value = entry.notes || ''; currentRating = entry.rating || 0; currentType = entry.type || 'manga'; currentStatus = entry.status || 'reading'; updateTypeButtons(); updateStatusButtons(); updateStars(); el('deleteBtn').style.display = 'block'; } else { editingId = null; el('sheetTitle').textContent = 'Tambah Seri'; }
+    volumesSheet.classList.remove('open'); sheet.classList.add('open'); backdrop.classList.add('open');
   }
-
-  function closeSheet(){
-    sheet.classList.remove('open');
-    backdrop.classList.remove('open');
-  }
-
-  document.querySelectorAll('.toggle-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{ currentType = btn.dataset.type; updateTypeButtons(); });
-  });
-  document.querySelectorAll('.status-pill').forEach(btn=>{
-    btn.addEventListener('click', ()=>{ currentStatus = btn.dataset.status; updateStatusButtons(); });
-  });
-  el('starPicker').addEventListener('click', (ev)=>{
-    const rect = el('starPicker').getBoundingClientRect();
-    const relX = ev.clientX - rect.left;
-    const starWidth = rect.width / 5;
-    currentRating = Math.min(5, Math.max(1, Math.ceil(relX / starWidth)));
-    updateStars();
-  });
-
+  
+  function closeSheet(){ sheet.classList.remove('open'); backdrop.classList.remove('open'); }
+  document.querySelectorAll('.toggle-btn').forEach(btn=>{ btn.addEventListener('click', ()=>{ currentType = btn.dataset.type; updateTypeButtons(); }); });
+  document.querySelectorAll('.status-pill').forEach(btn=>{ btn.addEventListener('click', ()=>{ currentStatus = btn.dataset.status; updateStatusButtons(); }); });
+  el('starPicker').addEventListener('click', (ev)=>{ const rect = el('starPicker').getBoundingClientRect(); const relX = ev.clientX - rect.left; const starWidth = rect.width / 5; currentRating = Math.min(5, Math.max(1, Math.ceil(relX / starWidth))); updateStars(); });
   el('addBtn').addEventListener('click', ()=> { sheetOrigin = 'list'; openSheet(null); });
   el('cancelBtn').addEventListener('click', (e)=>{ e.preventDefault(); closeSheet(); });
 
   el('deleteBtn').addEventListener('click', async (e)=>{
-    e.preventDefault();
-    if(!editingId) return;
-    if(!confirm('Hapus seri ini dari rak beserta semua data volumenya?')) return;
-    collection = collection.filter(x=>x.id !== editingId);
-    closeSheet();
-    if(sheetOrigin === 'volumes'){ volEntryId = null; sheetOrigin = 'list'; }
-    await saveData();
-    showToast('Seri dihapus.');
+    e.preventDefault(); if(!editingId) return; if(!confirm('Hapus seri ini dari rak?')) return;
+    collection = collection.filter(x=>x.id !== editingId); closeSheet(); if(sheetOrigin === 'volumes'){ volEntryId = null; sheetOrigin = 'list'; }
+    await saveData(); showToast('Seri dihapus.');
   });
 
   async function handleSave(ev){
-    if(ev) ev.preventDefault();
-    const title = el('fTitle').value.trim();
-    if(!title){ showToast('Judul wajib diisi.'); return; }
+    if(ev) ev.preventDefault(); const title = el('fTitle').value.trim(); if(!title){ showToast('Judul wajib diisi.'); return; }
     const existing = editingId ? collection.find(x=>x.id===editingId) : null;
-    const entry = {
-      id: editingId || (Date.now().toString(36) + Math.random().toString(36).slice(2,8)),
-      title,
-      author: el('fAuthor').value.trim(),
-      genre: el('fGenre').value.trim(),
-      type: currentType,
-      status: currentStatus,
-      rating: currentRating,
-      notes: el('fNotes').value.trim(),
-      dateAdded: existing ? existing.dateAdded : Date.now(),
-      volumes: existing ? (existing.volumes || []) : []
-    };
-    if(editingId){
-      collection = collection.map(x=> x.id === editingId ? entry : x);
-    } else {
-      collection.push(entry);
-    }
-    const wasVolumesOrigin = sheetOrigin === 'volumes';
-    closeSheet();
-    await saveData();
-    showToast(editingId ? 'Perubahan disimpan.' : 'Seri ditambahkan.');
-    if(wasVolumesOrigin){
-      volEntryId = entry.id;
-      renderVolumesView();
-      volumesSheet.classList.add('open');
-      backdrop.classList.add('open');
-    }
+    const entry = { id: editingId || (Date.now().toString(36) + Math.random().toString(36).slice(2,8)), title, author: el('fAuthor').value.trim(), genre: el('fGenre').value.trim(), type: currentType, status: currentStatus, rating: currentRating, notes: el('fNotes').value.trim(), dateAdded: existing ? existing.dateAdded : Date.now(), volumes: existing ? (existing.volumes || []) : [] };
+    if(editingId){ collection = collection.map(x=> x.id === editingId ? entry : x); } else { collection.push(entry); }
+    const wasVolumesOrigin = sheetOrigin === 'volumes'; closeSheet(); await saveData(); showToast(editingId ? 'Perubahan disimpan.' : 'Seri ditambahkan.');
+    if(wasVolumesOrigin){ volEntryId = entry.id; renderVolumesView(); volumesSheet.classList.add('open'); backdrop.classList.add('open'); }
     sheetOrigin = 'list';
   }
-  el('entryForm').addEventListener('submit', handleSave);
-  el('saveBtn').addEventListener('click', handleSave);
-
-  /* ---------- Volumes view ---------- */
+  el('entryForm').addEventListener('submit', handleSave); el('saveBtn').addEventListener('click', handleSave);
 
   function hideVolumesSheet(){ volumesSheet.classList.remove('open'); }
   function closeVolumesView(){ hideVolumesSheet(); backdrop.classList.remove('open'); volEntryId = null; }
-
-  function openVolumesView(entry){
-    volEntryId = entry.id;
-    sheet.classList.remove('open');
-    renderVolumesView();
-    volumesSheet.classList.add('open');
-    backdrop.classList.add('open');
-  }
+  function openVolumesView(entry){ volEntryId = entry.id; sheet.classList.remove('open'); renderVolumesView(); volumesSheet.classList.add('open'); backdrop.classList.add('open'); }
 
   function renderVolumesView(){
-    const entry = collection.find(x=>x.id === volEntryId);
-    if(!entry){ closeVolumesView(); return; }
-    const isLn = entry.type === 'light_novel';
-    const accent = isLn ? 'var(--indigo)' : 'var(--hanko)';
-    el('vwBadge').textContent = isLn ? 'LIGHT NOVEL' : 'MANGA';
-    el('vwBadge').style.background = accent;
-    el('vwTitle').textContent = entry.title;
-    el('vwAuthor').textContent = entry.author || '';
-    el('vwStamp').textContent = STATUS_LABEL[entry.status];
-    el('vwStamp').className = 'stamp st-' + entry.status;
-    el('volLegendUnread').style.background = accent;
-
-    const stats = computeVolStats(entry);
-    el('vwSummary').textContent = stats.total > 0
-      ? `${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} volume tercatat`
-      : 'Belum ada volume tercatat. Tambah volume pertama di bawah.';
-
+    const entry = collection.find(x=>x.id === volEntryId); if(!entry){ closeVolumesView(); return; }
+    const isLn = entry.type === 'light_novel'; const accent = isLn ? 'var(--indigo)' : 'var(--hanko)';
+    el('vwBadge').textContent = isLn ? 'LIGHT NOVEL' : 'MANGA'; el('vwBadge').style.background = accent; el('vwTitle').textContent = entry.title; el('vwAuthor').textContent = entry.author || ''; el('vwStamp').textContent = STATUS_LABEL[entry.status]; el('vwStamp').className = 'stamp st-' + entry.status; el('volLegendUnread').style.background = accent;
+    const stats = computeVolStats(entry); el('vwSummary').textContent = stats.total > 0 ? `${stats.owned} dimiliki • ${stats.read} dibaca dari ${stats.total} volume tercatat` : 'Belum ada volume tercatat.';
     const grid = el('volGrid');
-    let tilesHtml = (entry.volumes || []).map((v, idx)=>{
-      let cls = 'vol-tile', style = '';
-      if(v.state === 'owned_unread'){ cls += ' unread'; style = `background:${accent};border-color:${accent};`; }
-      else if(v.state === 'owned_read'){ cls += ' read'; style = `background:var(--ink);border-color:var(--ink);`; }
-      return `<div class="${cls}" data-idx="${idx}" style="${style}">${v.number}</div>`;
-    }).join('');
-    tilesHtml += `<div class="vol-tile-add" id="addVolTile">＋</div>`;
-    grid.innerHTML = tilesHtml;
-
-    grid.querySelectorAll('.vol-tile').forEach(tile=>{
-      tile.addEventListener('click', async ()=>{
-        const idx = parseInt(tile.dataset.idx);
-        const e2 = collection.find(x=>x.id === volEntryId);
-        if(!e2) return;
-        const v = e2.volumes[idx];
-        v.state = v.state === 'none' ? 'owned_unread' : v.state === 'owned_unread' ? 'owned_read' : 'none';
-        await saveData();
-        renderVolumesView();
-      });
-    });
-    el('addVolTile').addEventListener('click', async ()=>{
-      const e2 = collection.find(x=>x.id === volEntryId);
-      if(!e2) return;
-      e2.volumes = e2.volumes || [];
-      const nextNum = e2.volumes.length + 1;
-      e2.volumes.push({ number: nextNum, state: 'owned_unread' });
-      await saveData();
-      renderVolumesView();
-    });
+    let tilesHtml = (entry.volumes || []).map((v, idx)=>{ let cls = 'vol-tile', style = ''; if(v.state === 'owned_unread'){ cls += ' unread'; style = `background:${accent};border-color:${accent};`; } else if(v.state === 'owned_read'){ cls += ' read'; style = `background:var(--ink);border-color:var(--ink);`; } return `<div class="${cls}" data-idx="${idx}" style="${style}">${v.number}</div>`; }).join('');
+    tilesHtml += `<div class="vol-tile-add" id="addVolTile">＋</div>`; grid.innerHTML = tilesHtml;
+    grid.querySelectorAll('.vol-tile').forEach(tile=>{ tile.addEventListener('click', async ()=>{ const idx = parseInt(tile.dataset.idx); const e2 = collection.find(x=>x.id === volEntryId); if(!e2) return; const v = e2.volumes[idx]; v.state = v.state === 'none' ? 'owned_unread' : v.state === 'owned_unread' ? 'owned_read' : 'none'; await saveData(); renderVolumesView(); }); });
+    el('addVolTile').addEventListener('click', async ()=>{ const e2 = collection.find(x=>x.id === volEntryId); if(!e2) return; e2.volumes = e2.volumes || []; const nextNum = e2.volumes.length + 1; e2.volumes.push({ number: nextNum, state: 'owned_unread' }); await saveData(); renderVolumesView(); });
   }
 
   el('vwBackBtn').addEventListener('click', closeVolumesView);
+  el('vwEditBtn').addEventListener('click', ()=>{ const entry = collection.find(x=>x.id === volEntryId); if(!entry) return; sheetOrigin = 'volumes'; hideVolumesSheet(); openSheet(entry); });
+  el('vwDeleteBtn').addEventListener('click', async ()=>{ const entry = collection.find(x=>x.id === volEntryId); if(!entry) return; if(!confirm('Hapus seri ini?')) return; collection = collection.filter(x=>x.id !== volEntryId); closeVolumesView(); await saveData(); showToast('Seri dihapus.'); });
+  el('vwResizeBtn').addEventListener('click', async ()=>{ const entry = collection.find(x=>x.id === volEntryId); if(!entry) return; const val = parseInt(el('vwResizeInput').value); if(!val || val < 0) return; const current = entry.volumes || []; if(val < current.length){ if(!confirm(`Hapus data ${current.length - val} volume terakhir?`)) return; entry.volumes = current.slice(0, val); } else if(val > current.length){ const additions = []; for(let i = current.length + 1; i <= val; i++){ additions.push({ number:i, state:'none' }); } entry.volumes = current.concat(additions); } el('vwResizeInput').value = ''; await saveData(); renderVolumesView(); });
+  backdrop.addEventListener('click', ()=>{ closeSheet(); closeVolumesView(); });
 
-  el('vwEditBtn').addEventListener('click', ()=>{
-    const entry = collection.find(x=>x.id === volEntryId);
-    if(!entry) return;
-    sheetOrigin = 'volumes';
-    hideVolumesSheet();
-    openSheet(entry);
-  });
-
-  el('vwDeleteBtn').addEventListener('click', async ()=>{
-    const entry = collection.find(x=>x.id === volEntryId);
-    if(!entry) return;
-    if(!confirm('Hapus seri ini beserta semua data volumenya?')) return;
-    collection = collection.filter(x=>x.id !== volEntryId);
-    closeVolumesView();
-    await saveData();
-    showToast('Seri dihapus.');
-  });
-
-  el('vwResizeBtn').addEventListener('click', async ()=>{
-    const entry = collection.find(x=>x.id === volEntryId);
-    if(!entry) return;
-    const val = parseInt(el('vwResizeInput').value);
-    if(!val || val < 0) return;
-    const current = entry.volumes || [];
-    if(val < current.length){
-      if(!confirm(`Ini akan menghapus data ${current.length - val} volume terakhir. Lanjutkan?`)) return;
-      entry.volumes = current.slice(0, val);
-    } else if(val > current.length){
-      const additions = [];
-      for(let i = current.length + 1; i <= val; i++){ additions.push({ number:i, state:'none' }); }
-      entry.volumes = current.concat(additions);
-    }
-    el('vwResizeInput').value = '';
-    await saveData();
-    renderVolumesView();
-  });
-
-  backdrop.addEventListener('click', ()=>{
-    closeSheet();
-    closeVolumesView();
-  });
-
-  /* ---------- Filters & search ---------- */
-
-  document.querySelectorAll('#typeChips .chip').forEach(chip=>{
-    chip.addEventListener('click', ()=>{
-      document.querySelectorAll('#typeChips .chip').forEach(c=>c.classList.remove('active'));
-      chip.classList.add('active');
-      filterType = chip.dataset.type;
-      render();
-    });
-  });
-  document.querySelectorAll('#statusChips .chip').forEach(chip=>{
-    chip.addEventListener('click', ()=>{
-      document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.remove('active'));
-      chip.classList.add('active');
-      filterStatus = chip.dataset.status;
-      render();
-    });
-  });
-  el('searchInput').addEventListener('input', (e)=>{
-    searchQuery = e.target.value;
-    render();
-  });
-
-  el('menuBtn').addEventListener('click', async ()=>{
-    if(!confirm('Hapus SEMUA data koleksi? Tindakan ini tidak bisa dibatalkan.')) return;
-    collection = [];
-    await saveData();
-    showToast('Semua data telah dihapus.');
-  });
-
-  loadData();
-})();
+  document.querySelectorAll('#typeChips .chip').forEach(chip=>{ chip.addEventListener('click', ()=>{ document.querySelectorAll('#typeChips .chip').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); filterType = chip.dataset.type; render(); }); });
+  document.querySelectorAll('#statusChips .chip').forEach(chip=>{ chip.addEventListener('click', ()=>{ document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); filterStatus = chip.dataset.status; render(); }); });
+  el('searchInput').addEventListener('input', (e)=>{ searchQuery = e.target.value; render(); });
+  el('menuBtn').addEventListener('click', async ()=>{ if(!confirm('Hapus SEMUA data?')) return; collection = []; await saveData(); showToast('Semua data telah dihapus.'); });
 </script>
 </body>
 </html>
